@@ -122,8 +122,11 @@ WHEN nhân viên xác nhận gộp
 THEN hệ thống từ chối thao tác và hiển thị thông báo phù hợp.
 4. Non-functional Requirements
 Buổi 4 yêu cầu SRS có ít nhất 3 NFR và NFR phải có giá trị đo được. CDTN1_Buoi04_Phan tich yeu cau …
-NFR1 – Hiệu năng
-Các thao tác tra cứu hồ sơ khách hàng phải trả về kết quả trong vòng ≤ 2 giây đối với dữ liệu mẫu sử dụng trong dự án.
+**NFR1 – Hiệu năng**
+
+Hệ thống phải trả về kết quả tra cứu hồ sơ khách hàng theo họ tên hoặc số điện thoại trong thời gian không quá 2 giây (≤ 2 giây) với cơ sở dữ liệu có tối đa 65.000 hồ sơ khách hàng, trong điều kiện môi trường kiểm thử được xác định.
+
+**Phương pháp kiểm chứng:** Chuẩn bị tập dữ liệu 65.000 hồ sơ khách hàng, thực hiện các truy vấn tra cứu theo họ tên và số điện thoại, đo thời gian phản hồi và đối chiếu với ngưỡng NFR1.
 NFR2 – Bảo mật
 100% API thay đổi dữ liệu khách hàng phải yêu cầu người dùng đã được xác thực và có quyền phù hợp trước khi thực hiện.
 NFR3 – Bảo vệ dữ liệu cá nhân
@@ -185,12 +188,26 @@ Main Flow
 9.	Hệ thống thực hiện gộp.
 10.	Hệ thống cập nhật hồ sơ sau khi gộp.
 11.	Hệ thống thông báo thao tác hoàn tất.
-Exception Flow – E1
-Tại bước 8: dữ liệu không đáp ứng điều kiện thực hiện gộp.
-1.	Hệ thống từ chối thao tác.
-2.	Hệ thống hiển thị thông báo lỗi.
-3.	Không thay đổi dữ liệu hiện có.
-4.	Người dùng kiểm tra lại các hồ sơ đã chọn.
+**Exception Flow – UC5**
+
+**6a. Chưa chọn hồ sơ chính**
+
+- 6a.1. Tại bước 6, nếu người dùng chưa chọn hồ sơ chính, hệ thống hiển thị thông báo yêu cầu lựa chọn Master Record.
+- 6a.2. Người dùng chọn hồ sơ chính hợp lệ trước khi tiếp tục sang bước 7.
+
+**8a. Dữ liệu gộp không hợp lệ**
+
+- 8a.1. Tại bước 8, nếu hồ sơ chính trùng với hồ sơ nguồn hoặc dữ liệu không đáp ứng điều kiện gộp, hệ thống từ chối thao tác.
+- 8a.2. Hệ thống hiển thị thông báo lỗi và giữ nguyên dữ liệu hiện có.
+- 8a.3. Người dùng kiểm tra lại các hồ sơ đã chọn và thực hiện lại thao tác khi dữ liệu hợp lệ.
+
+**9a. Lỗi trong quá trình gộp hồ sơ**
+
+- 9a.1. Tại bước 9, nếu xảy ra lỗi trong quá trình thực hiện gộp, hệ thống rollback toàn bộ transaction.
+- 9a.2. Thông tin các hồ sơ khách hàng được giữ nguyên như trước khi thực hiện thao tác gộp.
+- 9a.3. Hệ thống thông báo gộp thất bại và không ghi nhận kết quả gộp một phần.
+
+**Liên kết NFR:** Luồng ngoại lệ 9a hỗ trợ yêu cầu NFR4 về tính toàn vẹn dữ liệu và rollback khi gộp thất bại.
 6.3. Traceability Matrix
 FR	User Story	Use Case	MoSCoW	API
 FR1 – Tạo hồ sơ khách hàng	US1	UC1	MUST	POST /api/customers
