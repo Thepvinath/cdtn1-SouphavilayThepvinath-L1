@@ -137,3 +137,59 @@ WHERE TABLE_SCHEMA = 'smartcrm'
 ChatGPT (OpenAI) được sử dụng để hỗ trợ phân tích yêu cầu, tham khảo thiết kế hệ thống, xây dựng tài liệu và SQL DDL.
 
 Chi tiết được khai báo tại `docs/ai-declaration.md`.
+
+## Yêu cầu môi trường – Buổi 8
+
+- PHP 8.0.30 (XAMPP)
+- MySQL Server 8.0
+- PDO và pdo_mysql
+- Visual Studio Code
+- PowerShell
+- Git và GitHub
+
+### Cấu hình
+
+1. Sao chép `.env.example` thành `.env`.
+2. Cập nhật thông tin kết nối MySQL trong `.env`.
+3. Tạo cơ sở dữ liệu bằng `database/schema.sql`.
+4. Không đưa file `.env` lên GitHub.
+
+### Chạy ứng dụng
+
+Mở Terminal tại thư mục gốc và chạy:
+
+```powershell
+& "C:\xampp\php\php.exe" -S 127.0.0.1:8000 -t src/public src/public/index.php
+```
+
+API chạy tại:
+
+`http://127.0.0.1:8000/api/customers`
+
+## Trạng thái hiện tại – Buổi 8 (Sprint 1)
+
+- [x] Tiếp nhận và xử lý phản hồi BT1.
+- [x] Tạo nhật ký thay đổi thiết kế.
+- [x] Xây dựng cấu trúc Controller – Service – Repository.
+- [x] Kết nối PHP với MySQL.
+- [x] CREATE: Tạo hồ sơ khách hàng.
+- [x] READ: Tra cứu và xem chi tiết hồ sơ.
+- [x] UPDATE: Cập nhật thông tin hồ sơ.
+- [x] DELETE: Xóa mềm hồ sơ khách hàng.
+- [x] Kiểm tra số điện thoại trùng – HTTP 409.
+- [x] Kiểm tra dữ liệu không hợp lệ – HTTP 400.
+- [x] Kiểm tra GET sau Soft Delete – HTTP 404.
+- [ ] Hoàn thiện Authentication và Authorization.
+- [ ] Hiện thực phát hiện và gộp hồ sơ trùng.
+- [ ] Bổ sung kiểm thử tự động.
+
+### Giới hạn hiện tại
+
+Module CRUD là phiên bản thử nghiệm trong môi trường
+local. Chưa triển khai xác thực và phân quyền cho các
+API thay đổi dữ liệu.
+
+Các chức năng UPDATE và DELETE được xây dựng để
+kiểm chứng CRUD trong Sprint 1. Phạm vi nghiệp vụ L1
+chính thức vẫn tuân theo tài liệu SRS và cần được
+đối chiếu trước các Sprint tiếp theo.

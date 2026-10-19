@@ -208,10 +208,13 @@ Main Flow
 - 9a.3. Hệ thống thông báo gộp thất bại và không ghi nhận kết quả gộp một phần.
 
 **Liên kết NFR:** Luồng ngoại lệ 9a hỗ trợ yêu cầu NFR4 về tính toàn vẹn dữ liệu và rollback khi gộp thất bại.
-6.3. Traceability Matrix
-FR	User Story	Use Case	MoSCoW	API
-FR1 – Tạo hồ sơ khách hàng	US1	UC1	MUST	POST /api/customers
-FR2 – Tra cứu hồ sơ khách hàng	US2	UC2	MUST	GET /api/customers
-FR3 – Xem chi tiết hồ sơ	US3	UC3	COULD	GET /api/customers/{id}
-FR4 – Phát hiện hồ sơ có khả năng bị trùng	US4, US5	UC4	SHOULD	GET /api/customers/duplicates
-FR5 – Gộp hồ sơ khách hàng trùng	US6, US7,   UC5	MUST	POST /api/customers/merge
+
+### 6.3. Traceability Matrix
+
+| FR | User Story | Use Case | MoSCoW | API |
+|---|---|---|---|---|
+| FR1 – Tạo hồ sơ khách hàng | US1 | UC1 | MUST | POST /api/customers |
+| FR2 – Tra cứu hồ sơ khách hàng | US2 | UC2 | MUST | GET /api/customers |
+| FR3 – Xem chi tiết hồ sơ | US3 | UC3 | COULD | GET /api/customers/{id} |
+| FR4 – Phát hiện hồ sơ có khả năng bị trùng | US4, US5 | UC4 | SHOULD | GET /api/customers/duplicates |
+| FR5 – Gộp hồ sơ khách hàng trùng | US6, US7 | UC5 | MUST | POST /api/customers/merge |
