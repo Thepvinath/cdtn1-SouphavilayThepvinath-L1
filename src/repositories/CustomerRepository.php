@@ -131,4 +131,30 @@ public function update(int $id, array $data): bool
     }
 
 
+    // FR4: Tim ho so nghi trung theo so dien thoai chuan hoa
+    public function findPotentialDuplicates(): array
+    {
+        $sql = "
+            SELECT c.*
+            FROM customers c
+            INNER JOIN (
+                SELECT phone_normalized
+                FROM customers
+                WHERE status = 'ACTIVE'
+                  AND deleted_at IS NULL
+                  AND phone_normalized <> ''
+                GROUP BY phone_normalized
+                HAVING COUNT(*) > 1
+            ) duplicates
+                ON c.phone_normalized = duplicates.phone_normalized
+            WHERE c.status = 'ACTIVE'
+              AND c.deleted_at IS NULL
+            ORDER BY c.phone_normalized, c.customer_id
+        ";
+
+        $stmt = $this->pdo->query($sql);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }

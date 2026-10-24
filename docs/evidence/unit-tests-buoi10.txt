@@ -1,0 +1,17 @@
+[PASS] UT01 - Create: missing full name
+[PASS] UT02 - Create: missing phone
+[PASS] UT03 - Create: phone contains letters
+[PASS] UT04 - Create: fewer than 8 phone digits
+[PASS] UT05 - Create: more than 15 phone digits
+[PASS] UT06 - Create: invalid email
+[PASS] UT07 - Create: valid data is trimmed
+[PASS] UT08 - Create: optional fields become null
+[PASS] UT09 - Update: missing full name
+[PASS] UT10 - Update: invalid email
+[PASS] UT11 - Update: valid data and empty optional fields
+[PASS] UT12 - Merge: invalid master ID
+[PASS] UT13 - Merge: invalid source ID
+[PASS] UT14 - Merge: invalid performer ID
+[PASS] UT15 - Merge: self-merge is rejected
+
+Results: 15 passed, 0 failed, 15 total

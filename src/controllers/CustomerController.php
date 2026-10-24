@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 final class CustomerController
 {
-    public function __construct(
-        private CustomerService $service
-    ) {
-    }
+public function __construct(
+    private CustomerService $service,
+    private DuplicateDetectionService $duplicateService
+) {
+}
+
 
     // GET /api/customers
     public function index(): void
@@ -158,5 +160,22 @@ $validated = CustomerValidator::validateCreate((array) $input);
         ]);
     }
 
+
+// FR4: GET /api/customers/duplicates
+public function duplicates(): void
+{
+    $customers = $this->duplicateService
+        ->getPotentialDuplicates();
+
+    // Bao ve so dien thoai theo NFR3
+    $results = array_map(
+        [self::class, 'maskCustomer'],
+        $customers
+    );
+
+    self::json(200, [
+        'data' => $results
+    ]);
+}
 
 }
