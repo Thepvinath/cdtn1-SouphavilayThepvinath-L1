@@ -1,506 +1,345 @@
-
 # SMART CRM – MEKONG MOBILE
 
-## 1. Thông tin dự án
+**Bài tập 2 (BT2) — Chuyên đề tốt nghiệp 1 | Track Software Engineering (SE)**
 
-**Tên dự án:** Smart CRM – Mekong Mobile
+- **Luồng nghiệp vụ:** L1 – Tạo, tra cứu, gộp hồ sơ khách hàng trùng
+- **Sinh viên:** Thepvinath Souphavilay · **MSSV:** 237480201IS03
+- **Repository:** https://github.com/Thepvinath/smartcrm-237480201is03-customer-profile-management
+- **Nhánh phát triển:** `dev` · **Tag nộp BT2:** `v0.2` (*chỉ sử dụng sau khi tạo và đẩy tag*)
 
-**Luồng nghiệp vụ:** L1 – Tạo, tra cứu và gộp hồ sơ khách hàng trùng
+> **Mục đích của README:** Người chấm có thể clone mã nguồn vào một thư mục mới, cấu hình MySQL, tạo dữ liệu demo, chạy API + giao diện và chạy bộ kiểm thử theo đúng từng bước mà không cần dữ liệu có sẵn trên máy của sinh viên.
+>
+> Các lệnh dưới đây dành cho **PowerShell trên Windows + XAMPP + MySQL 8**. Phần cấu hình trên hệ điều hành khác chưa được kiểm chứng.
 
-**Chuyên ngành (Track):** Software Engineering (SE)
+## 1. Giới thiệu và phạm vi
 
-**Sinh viên thực hiện:** Thepvinath Souphavilay
+Smart CRM – Mekong Mobile là ứng dụng quản lý hồ sơ khách hàng, hỗ trợ:
 
-**MSSV:** 237480201IS03
+1. **FR1 – Tạo hồ sơ:** nhập họ tên, số điện thoại, email và địa chỉ; kiểm tra dữ liệu đầu vào.
+2. **FR2 – Tra cứu:** tìm theo họ tên hoặc số điện thoại.
+3. **FR3 – Xem chi tiết:** đọc dữ liệu một khách hàng theo mã.
+4. **FR4 – Phát hiện trùng:** tìm các hồ sơ `ACTIVE` có `phone_normalized` trùng nhau.
+5. **FR5 – Gộp hồ sơ:** chọn Master và Source, kiểm tra điều kiện, chuyển Source sang `MERGED` và ghi lịch sử trong MySQL Transaction.
 
-**Repository:** https://github.com/Thepvinath/smartcrm-237480201is03-customer-profile-management
+Hệ thống còn có các API cập nhật và xóa mềm khách hàng để kiểm thử CRUD. Ngoài phạm vi: đặt hàng, thanh toán, quản lý kho và chiến dịch marketing.
 
-### 1.1. Mục tiêu
+**Kiến trúc:** React/Vite → API PHP (Controller) → Service/Validator → Repository (PDO) → MySQL. Authentication sử dụng PHP Session; các thao tác thay đổi dữ liệu sử dụng RBAC và CSRF Token.
 
-Xây dựng hệ thống quản lý hồ sơ khách hàng cho Mekong Mobile, hỗ trợ nhân viên bán hàng tạo mới, tra cứu, phát hiện và gộp các hồ sơ khách hàng bị trùng lặp.
+## 2. Yêu cầu môi trường
 
-Hệ thống hướng đến việc giảm dữ liệu trùng, cải thiện tính nhất quán của thông tin khách hàng và hỗ trợ quản lý hồ sơ hiệu quả hơn.
-
-### 1.2. Phạm vi nghiệp vụ
-
-Dự án tập trung vào luồng L1 – Quản lý hồ sơ khách hàng.
-
-Các chức năng chính bao gồm:
-
-- Tạo hồ sơ khách hàng.
-- Tra cứu theo họ tên hoặc số điện thoại.
-- Xem chi tiết hồ sơ khách hàng.
-- Phát hiện hồ sơ nghi trùng.
-- So sánh thông tin hồ sơ nghi trùng.
-- Chọn hồ sơ chính (Master Record).
-- Gộp hồ sơ trùng và lưu lịch sử gộp.
-
-Các chức năng quản lý đơn hàng, thanh toán, kho hàng và chiến dịch Marketing nằm ngoài phạm vi nghiệp vụ L1.
-
-## 2. Yêu cầu chức năng
-
-| Mã | Chức năng | Trạng thái |
-|---|---|---|
-| FR1 | Tạo hồ sơ khách hàng | Đã triển khai và kiểm thử |
-| FR2 | Tra cứu hồ sơ khách hàng | Đã triển khai và kiểm thử |
-| FR3 | Xem chi tiết hồ sơ khách hàng | Đã triển khai và kiểm thử |
-| FR4 | Phát hiện hồ sơ nghi trùng | Đã triển khai và kiểm thử |
-| FR5 | Gộp hồ sơ khách hàng trùng | Đã triển khai và kiểm thử |
-
-Ngoài ra, hệ thống có chức năng cập nhật và xóa mềm hồ sơ khách hàng để hỗ trợ kiểm chứng CRUD trong Sprint 1.
-
-### 2.1. Authentication và Authorization
-
-Hệ thống đã triển khai đăng nhập bằng email và mật khẩu.
-
-Các vai trò được sử dụng:
-
-- `SALES_STAFF`
-- `STORE_MANAGER`
-- `MARKETING`
-
-Các API thay đổi dữ liệu được kiểm soát thông qua cơ chế xác thực Session, phân quyền theo vai trò và CSRF Token.
-
-Các trường hợp kiểm thử đã thực hiện bao gồm:
-
-- Đăng nhập hợp lệ.
-- Kiểm tra thông tin người dùng hiện tại.
-- Đăng xuất.
-- Từ chối yêu cầu chưa đăng nhập (HTTP 401).
-- Từ chối vai trò không có quyền (HTTP 403).
-- Từ chối CSRF Token không hợp lệ (HTTP 403).
-
-### 2.2. Duplicate Detection (FR4)
-
-Hệ thống phát hiện các hồ sơ đang hoạt động có số điện thoại chuẩn hóa trùng nhau.
-
-API:
-
-`GET /api/customers/duplicates`
-
-Frontend hiển thị danh sách hồ sơ nghi trùng để người dùng xem xét trước khi thực hiện gộp.
-
-### 2.3. Merge Customer Profiles (FR5)
-
-Người dùng được phép:
-
-1. Xem danh sách hồ sơ nghi trùng.
-2. Chọn hồ sơ chính (Master).
-3. Chọn hồ sơ trùng (Source).
-4. So sánh thông tin hai hồ sơ.
-5. Xác nhận thao tác gộp.
-6. Xem thông báo kết quả.
-
-API:
-
-`POST /api/customers/merge`
-
-Dữ liệu JSON:
-
-```json
-{
-  "master_customer_id": 13,
-  "source_customer_id": 14
-}
-```
-
-Hệ thống kiểm tra:
-
-- ID khách hàng hợp lệ.
-- Không cho phép tự gộp một hồ sơ vào chính nó.
-- Hai hồ sơ phải tồn tại và còn ACTIVE.
-- Hai hồ sơ phải có số điện thoại chuẩn hóa trùng nhau.
-- Người thực hiện phải có quyền phù hợp.
-- Yêu cầu phải có CSRF Token hợp lệ.
-
-Khi gộp thành công:
-
-- Hồ sơ Master tiếp tục ở trạng thái `ACTIVE`.
-- Hồ sơ Source chuyển thành `MERGED`.
-- Trường `deleted_at` của Source được cập nhật.
-- Thao tác được ghi vào `merge_operations` và `merge_items`.
-
-### 2.4. Transaction và Rollback (NFR4)
-
-Chức năng Merge sử dụng MySQL Transaction.
-
-Quá trình xử lý gồm:
-
-1. Khóa các hồ sơ liên quan bằng `SELECT ... FOR UPDATE`.
-2. Ghi lịch sử vào `merge_operations`.
-3. Ghi thông tin Source vào `merge_items`.
-4. Cập nhật trạng thái hồ sơ Source.
-5. `COMMIT` nếu tất cả bước thành công.
-
-Nếu phát sinh lỗi trong Transaction, hệ thống thực hiện `ROLLBACK`.
-
-Đã kiểm thử tình huống lỗi được mô phỏng bằng MySQL Trigger trong môi trường Local:
-
-- API trả HTTP 500.
-- Master và Source giữ nguyên trạng thái ACTIVE.
-- Không có lịch sử Merge không hoàn chỉnh được lưu lại.
-- Test Trigger được xóa sau khi kết thúc kiểm thử.
-
-Kết quả trên chứng minh Rollback hoạt động trong tình huống kiểm thử đã thực hiện; không đại diện cho việc đã kiểm thử tất cả tình huống lỗi có thể xảy ra.
-
-## 3. Công nghệ sử dụng
-
-| Thành phần | Công nghệ |
+| Thành phần | Yêu cầu cho quy trình bên dưới |
 |---|---|
-| Frontend | React, JavaScript, Vite, CSS |
-| Backend | PHP 8.x |
-| Database | MySQL 8.0 |
-| Database Access | PDO / pdo_mysql |
-| Authentication | PHP Session |
-| Authorization | Role-Based Access Control (RBAC) |
-| Security | CSRF Token, Password Hashing |
-| Database Management | MySQL Workbench |
-| Testing | PHP Native Test Runner |
-| Version Control | Git và GitHub |
-| Thiết kế sơ đồ | draw.io |
+| Hệ điều hành | Windows, PowerShell |
+| Backend | PHP 8.x (XAMPP), extensions `PDO`, `pdo_mysql`, `mbstring` |
+| Database | MySQL Server 8.0; MySQL Workbench để tạo database |
+| Frontend | Node.js phiên bản phù hợp với Vite 8 (Node >=20.19 hoặc >=22.12), npm |
+| Công cụ | Git, trình duyệt |
+| Cổng | API `127.0.0.1:8000`, Vite `127.0.0.1:5173`, MySQL thường `3306` |
 
-Hệ thống hiện được triển khai và kiểm thử trên môi trường Local Windows với XAMPP, PHP, MySQL và Node.js.
+**Kiểm tra phiên bản** tại PowerShell:
 
-## 4. Cấu trúc thư mục
-
-Các thành phần chính của dự án:
-
-```text
-smartcrm-237480201is03-customer-profile-management/
-|
-|-- database/
-|   `-- schema.sql
-|
-|-- docs/
-|   |-- evidence/
-|   |   |-- unit-tests-buoi10.txt
-|   |   `-- [Ảnh minh chứng kiểm thử]
-|   |-- srs.md
-|   |-- api-contract.md
-|   |-- ai-declaration.md
-|   `-- [Sơ đồ thiết kế]
-|
-|-- frontend/
-|   |-- src/
-|   |   |-- api/
-|   |   |   |-- auth.api.js
-|   |   |   |-- client.js
-|   |   |   |-- customers.api.js
-|   |   |   `-- merge.api.js
-|   |   |-- pages/
-|   |   |   |-- CreateCustomerPage.jsx
-|   |   |   |-- DuplicatesPage.jsx
-|   |   |   `-- LoginPage.jsx
-|   |   |-- App.jsx
-|   |   `-- index.css
-|   |-- package.json
-|   `-- vite.config.js
-|
-|-- src/
-|   |-- config/
-|   |   `-- Database.php
-|   |-- controllers/
-|   |   |-- AuthController.php
-|   |   |-- CustomerController.php
-|   |   `-- MergeController.php
-|   |-- repositories/
-|   |   |-- AuthRepository.php
-|   |   `-- CustomerRepository.php
-|   |-- security/
-|   |   `-- RequestGuard.php
-|   |-- services/
-|   |   |-- AuthService.php
-|   |   |-- CustomerService.php
-|   |   |-- DuplicateDetectionService.php
-|   |   `-- MergeService.php
-|   |-- validators/
-|   |   `-- CustomerValidator.php
-|   `-- public/
-|       `-- index.php
-|
-|-- tests/
-|   |-- test_db.php
-|   `-- run_unit_tests.php
-|
-|-- .env.example
-|-- .gitignore
-`-- README.md
+```powershell
+& "C:\xampp\php\php.exe" --version
 ```
 
-Thư mục `frontend/node_modules/` và các tệp `.env` chứa cấu hình riêng không được đưa lên GitHub.
+```powershell
+& "C:\xampp\php\php.exe" -m
+```
 
-## 5. Hướng dẫn cài đặt và chạy ứng dụng
+```powershell
+node --version
+```
 
-### 5.1. Yêu cầu môi trường
+```powershell
+npm --version
+```
 
-- PHP 8.x (XAMPP)
-- MySQL Server 8.0
-- PHP extensions: PDO, pdo_mysql, mbstring
-- Node.js và npm
-- Git
-- Visual Studio Code
+```powershell
+git --version
+```
 
-### 5.2. Cấu hình Database
+Nếu PHP hoặc MySQL được cài ở đường dẫn/cổng khác, sửa lệnh hoặc `.env` tương ứng. **Đảm bảo MySQL Server đang chạy** trước khi thực hiện migration.
 
-Tại thư mục gốc:
+## 3. Dựng lại hệ thống từ thư mục trống (Clean Clone)
 
-1. Sao chép `.env.example` thành `.env`.
-2. Cập nhật thông tin kết nối MySQL.
-3. Mở MySQL Workbench.
-4. Thực thi tệp `database/schema.sql` để khởi tạo cơ sở dữ liệu nếu chưa có.
+> **Lưu ý an toàn:** Quy trình sử dụng **database riêng `smartcrm_bt2_clean_clone`**, không tác động vào database gốc `smartcrm`. Không chạy `database/schema.sql` hoặc `database/seed.sql` của bản cũ trên database cần bảo toàn dữ liệu. `database/seed.sql` hiện có dòng `USE smartcrm;`; đối với Clean Clone BT2 hãy sử dụng `database/seed_bt2.php` theo bước 3.5.
 
-**Lưu ý:** Không chạy lại các lệnh có khả năng tạo lại hoặc thay đổi cấu trúc dữ liệu trên cơ sở dữ liệu đang chứa dữ liệu cần giữ lại nếu chưa kiểm tra và sao lưu.
+### 3.1. Clone mã nguồn
 
-Kiểm tra các bảng:
+Mở PowerShell tại thư mục muốn chứa dự án. Trong giai đoạn chuẩn bị (trước khi phát hành tag), dùng nhánh `dev`:
+
+```powershell
+cd C:\Users\Donut
+```
+
+```powershell
+git clone --branch dev --single-branch https://github.com/Thepvinath/smartcrm-237480201is03-customer-profile-management.git smartcrm-bt2-clean-check
+```
+
+```powershell
+cd smartcrm-bt2-clean-check
+```
+
+**Khi đã phát hành `v0.2`**, giảng viên thay lệnh clone ở trên bằng:
+
+```powershell
+git clone --branch v0.2 --single-branch https://github.com/Thepvinath/smartcrm-237480201is03-customer-profile-management.git smartcrm-bt2-grading
+```
+
+Sau khi clone bằng tag, chuyển vào `smartcrm-bt2-grading` thay vì `smartcrm-bt2-clean-check`. **Tag `v0.2` phải tồn tại trên GitHub trước khi dùng lệnh này.**
+
+### 3.2. Tạo database MySQL trống
+
+Mở MySQL Workbench và chạy đoạn SQL dưới đây **chỉ một lần để tạo database**:
 
 ```sql
-USE smartcrm;
-SHOW TABLES;
+CREATE DATABASE IF NOT EXISTS smartcrm_bt2_clean_clone
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 ```
 
-Cơ sở dữ liệu sử dụng các bảng chính:
+Database này phải trống trước lần migration đầu tiên (không có bảng). Không dùng cơ sở dữ liệu `smartcrm` của bài làm ban đầu.
 
-- `roles`
-- `users`
-- `customers`
-- `merge_operations`
-- `merge_items`
+### 3.3. Tạo và cấu hình `.env`
 
-### 5.3. Cấu hình PHP Session
-
-Trong môi trường Windows đang sử dụng, hệ thống lưu Session tại:
-
-`%LOCALAPPDATA%\SmartCRM\sessions`
-
-Thư mục này cần tồn tại và có quyền ghi đối với tiến trình PHP.
-
-### 5.4. Chạy Backend
-
-Mở PowerShell tại thư mục gốc dự án:
+Tại thư mục gốc dự án:
 
 ```powershell
-& "C:\xampp\php\php.exe" -S 127.0.0.1:8000 -t src/public src/public/index.php
+Copy-Item .env.example .env
 ```
-
-Backend API:
-
-`http://127.0.0.1:8000`
-
-Ví dụ:
-
-`http://127.0.0.1:8000/api/auth/csrf`
-
-Giữ Terminal Backend đang chạy.
-
-### 5.5. Chạy Frontend
-
-Mở Terminal mới tại thư mục gốc:
 
 ```powershell
-cd frontend
-npm install
-npm run dev
+notepad .env
 ```
 
-Frontend chạy tại:
+Điền các biến sau theo **MySQL trên máy đang cài** (ví dụ tên biến, không phải tài khoản thật):
 
-`http://127.0.0.1:5173`
+```dotenv
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=smartcrm_bt2_clean_clone
+DB_USER=YOUR_MYSQL_USERNAME
+DB_PASSWORD=YOUR_MYSQL_PASSWORD
+APP_ENV=development
+APP_PORT=8000
+```
 
-Frontend sử dụng cấu hình Vite Proxy để gửi các yêu cầu `/api` đến PHP Backend tại cổng 8000.
+Đổi `YOUR_MYSQL_USERNAME`, `YOUR_MYSQL_PASSWORD` thành thông tin MySQL **của máy đang chạy**. Tệp `.env` được `.gitignore` loại trừ: **không commit hoặc gửi mật khẩu thật**. `APP_PORT` là giá trị cấu hình tham khảo; cổng thực tế của PHP server được chọn bởi tham số `-S` ở bước 3.7.
 
-Cần chạy cả Backend và Frontend để sử dụng hệ thống đầy đủ.
+### 3.4. Chạy migration (an toàn khi chạy lại)
 
-### 5.6. Đăng nhập
+```powershell
+& "C:\xampp\php\php.exe" database/migrate.php smartcrm_bt2_clean_clone
+```
 
-Truy cập Frontend và đăng nhập bằng tài khoản hợp lệ đã được tạo trong bảng `users`.
+Lần đầu mong đợi:
 
-Mật khẩu không được lưu trực tiếp dưới dạng văn bản thuần trong cơ sở dữ liệu hoặc tài liệu công khai.
+```text
+Connected to: smartcrm_bt2_clean_clone
+SUCCESS: 001_initial applied.
+Tables created: 5
+```
 
-## 6. Các API chính
+Chạy lại **chính lệnh trên** để kiểm tra tính idempotent; mong đợi:
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/api/auth/csrf` | Lấy CSRF Token |
-| POST | `/api/auth/login` | Đăng nhập |
-| GET | `/api/auth/me` | Thông tin người dùng hiện tại |
-| POST | `/api/auth/logout` | Đăng xuất |
-| GET | `/api/customers` | Danh sách và tra cứu khách hàng |
-| POST | `/api/customers` | Tạo hồ sơ khách hàng |
-| GET | `/api/customers/{id}` | Xem chi tiết hồ sơ |
-| PUT | `/api/customers/{id}` | Cập nhật hồ sơ |
-| DELETE | `/api/customers/{id}` | Xóa mềm hồ sơ |
-| GET | `/api/customers/duplicates` | Phát hiện hồ sơ nghi trùng |
-| POST | `/api/customers/merge` | Gộp hồ sơ khách hàng trùng |
+```text
+SKIP: 001_initial already applied.
+```
 
-Các API thay đổi dữ liệu yêu cầu xác thực, phân quyền phù hợp và CSRF Token theo cơ chế bảo vệ hiện tại của Backend.
+Migration tạo 5 bảng nghiệp vụ (`roles`, `users`, `customers`, `merge_operations`, `merge_items`) và 1 bảng theo dõi `schema_migrations`, tổng cộng **6 bảng**.
 
-Chi tiết yêu cầu nghiệp vụ và thiết kế API được tham chiếu tại `docs/srs.md` và `docs/api-contract.md`.
+### 3.5. Nạp dữ liệu và tạo tài khoản demo cục bộ
 
-## 7. Kiểm thử
+**Dùng tệp hỗ trợ BT2 `database/seed_bt2.php` đi kèm bản README này** (phải được thêm và commit vào repo trước khi phát hành `v0.2`). Seeder chỉ chấp nhận database `smartcrm_bt2_*`, kiểm tra `.env` đúng database, không thay đổi dữ liệu nguồn nếu chạy lại.
 
-### 7.1. Kiểm tra kết nối MySQL
+```powershell
+& "C:\xampp\php\php.exe" database/seed_bt2.php smartcrm_bt2_clean_clone
+```
 
-Chạy tại thư mục gốc dự án:
+Chạy lần đầu sẽ thêm vai trò, 3 hồ sơ khách hàng mẫu (gồm một cặp nghi trùng), và tài khoản `demo.sales@smartcrm.local` thuộc vai trò `SALES_STAFF`. **Mật khẩu demo được tạo ngẫu nhiên và hiển thị đúng một lần trong Terminal**. Ghi lại mật khẩu vào nơi riêng tư **bên ngoài Repository**; không đưa vào ảnh minh chứng hoặc tài liệu công khai.
+
+Chạy lại lệnh trên để kiểm tra không nhân đôi dữ liệu. Nếu tài khoản demo đã tồn tại, Seeder sẽ không đổi mật khẩu. Các bản ghi Customer đã chuyển `MERGED` không được chuyển ngược về `ACTIVE` khi chạy lại Seeder.
+
+> Nếu vừa hoàn thành Merge và muốn demo lại với một cặp trùng chưa gộp, hãy sử dụng **database thử nghiệm mới** theo cùng quy trình thay vì xóa/sửa dữ liệu cũ tùy tiện. Không chạy Seeder này trên dữ liệu Production.
+
+### 3.6. Kiểm tra kết nối và chạy unit test
 
 ```powershell
 & "C:\xampp\php\php.exe" tests/test_db.php
 ```
 
-Tệp này kiểm tra khả năng kết nối đến MySQL và đọc danh sách bảng.
-
-### 7.2. Unit Tests – Buổi 10
-
-Hệ thống sử dụng PHP Native Test Runner, không yêu cầu Composer hoặc PHPUnit.
-
-Chạy:
+Kỳ vọng: `MySQL connection: SUCCESS`, tên database `smartcrm_bt2_clean_clone`, `Tables (6)`.
 
 ```powershell
 & "C:\xampp\php\php.exe" tests/run_unit_tests.php
 ```
 
-Kết quả kiểm thử ngày 24/10/2026:
+Kết quả đã lưu trong quá trình phát triển: `Results: 15 passed, 0 failed, 15 total`. Hãy **chạy lại** và xác nhận trên máy mới; không xem kết quả lịch sử là bằng chứng của môi trường hiện tại.
 
-```text
-Results: 15 passed, 0 failed, 15 total
+### 3.7. Chạy Backend API
+
+Ứng dụng cấu hình PHP Session tại `%LOCALAPPDATA%\SmartCRM\sessions`. Tạo thư mục có quyền ghi:
+
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\SmartCRM\sessions" | Out-Null
 ```
 
-Phân loại kiểm thử:
+Trong **Terminal 1**, từ thư mục gốc dự án:
 
-| Nhóm | Số lượng | Kết quả |
-|---|---:|---|
-| Customer Create Validation | 8 | PASS |
-| Customer Update Validation | 3 | PASS |
-| Merge Input Validation | 4 | PASS |
-| Tổng cộng | 15 | PASS |
+```powershell
+& "C:\xampp\php\php.exe" -S 127.0.0.1:8000 -t src/public src/public/index.php
+```
 
-Các Unit Tests tập trung vào kiểm tra Validation và các điều kiện đầu vào của Merge. Kiểm thử này không thay thế Integration Test hoặc End-to-End Test.
+Giữ Terminal này mở. Kiểm tra trong trình duyệt:
 
-**Test Evidence:**
+`http://127.0.0.1:8000/api/auth/csrf`
 
-`docs/evidence/unit-tests-buoi10.txt`
+Kỳ vọng: JSON chứa `data.csrf_token`. **Không cần mở cổng 8001** trong cấu hình hiện tại: `frontend/vite.config.js` đang proxy `/api` tới `127.0.0.1:8000`.
 
-### 7.3. Integration và API Tests
+### 3.8. Cài Dependencies và chạy Frontend
 
-Các tình huống đã thực hiện trong quá trình phát triển:
+Mở **Terminal 2** tại thư mục gốc dự án:
 
-- Tạo khách hàng thành công.
-- Trả lỗi khi thiếu dữ liệu bắt buộc.
-- Tra cứu và xem chi tiết khách hàng.
-- Cập nhật và xóa mềm khách hàng.
-- Phát hiện hồ sơ nghi trùng.
-- Từ chối yêu cầu chưa đăng nhập (401).
-- Từ chối người dùng không đủ quyền (403).
-- Từ chối CSRF Token không hợp lệ (403).
-- Từ chối Self-Merge (409).
-- Merge thành công và lưu lịch sử.
-- Rollback khi xảy ra lỗi được mô phỏng trong Transaction.
+```powershell
+cd frontend
+```
 
-### 7.4. End-to-End Test – FR5
+```powershell
+npm ci
+```
 
-Đã thực hiện kiểm thử thao tác Merge qua giao diện React.
+```powershell
+npm run dev
+```
 
-Dữ liệu kiểm thử:
+Mở: `http://127.0.0.1:5173`
 
-- Master: KH13
-- Source: KH14
+Tài khoản đăng nhập: `demo.sales@smartcrm.local`; mật khẩu là giá trị **Seeder hiển thị tại lần chạy đầu tiên**. Không dùng password của tài khoản GitHub/MySQL để đăng nhập ứng dụng.
 
-Kết quả:
+## 4. Các màn hình và luồng demo
 
-- Frontend hiển thị thông báo Merge thành công.
-- MySQL ghi nhận thao tác Merge.
-- KH13 tiếp tục ở trạng thái ACTIVE.
-- KH14 chuyển sang MERGED.
-- Danh sách hồ sơ nghi trùng được cập nhật.
+**Ba màn hình chính** sử dụng API thật:
 
-Dữ liệu KH13/KH14 được sử dụng trong môi trường Local nhằm kiểm chứng chức năng.
+1. **Danh sách và tra cứu khách hàng:** xem các khách hàng `ACTIVE`, nhập từ khóa theo tên hoặc số điện thoại, thử từ khóa không có kết quả.
+2. **Tạo hồ sơ khách hàng:** nhập họ tên và số điện thoại hợp lệ, kiểm tra danh sách đã cập nhật; thử email sai hoặc thiếu trường bắt buộc để quan sát Validation.
+3. **Hồ sơ khách hàng nghi trùng:** dữ liệu mẫu gồm `BT2 DEMO MASTER` và `BT2 DEMO SOURCE`. Chọn một hồ sơ làm Master, hồ sơ còn lại làm Source, so sánh rồi bấm **Xác nhận gộp hồ sơ**.
 
-### 7.5. Kiểm thử Rollback – NFR4
+Sau Merge thành công, Master giữ `ACTIVE`, Source chuyển `MERGED`, thông tin Merge được ghi trong `merge_operations` và `merge_items`; cặp trùng không còn xuất hiện trong danh sách hồ sơ `ACTIVE` nghi trùng.
 
-Đã sử dụng MySQL Trigger tạm thời để mô phỏng lỗi khi ghi `merge_items`.
+**Ba trạng thái giao diện cần kiểm chứng:**
 
-Kết quả:
+- **Đang tải (Loading):** khi đang kiểm tra phiên đăng nhập hoặc nạp danh sách.
+- **Rỗng (Empty):** tìm từ khóa không tồn tại, hoặc sau khi gộp hết cặp hồ sơ trùng.
+- **Lỗi (Error):** dừng Backend trong lúc Frontend đang chạy, thực hiện tải lại và quan sát thông báo lỗi / nút thử lại; sau đó bật Backend để tiếp tục.
 
-- HTTP 500 trong tình huống mô phỏng.
-- Không để lại lịch sử Merge chưa hoàn chỉnh.
-- Trạng thái Master và Source không thay đổi.
-- Trigger tạm thời đã được xóa sau khi kiểm thử.
+### API chính
 
-## 8. Tài liệu dự án
+| Phương thức | Endpoint | Mục đích |
+|---|---|---|
+| GET | `/api/auth/csrf` | Nhận CSRF Token |
+| POST | `/api/auth/login` | Đăng nhập |
+| GET | `/api/auth/me` | Xem phiên đăng nhập |
+| POST | `/api/auth/logout` | Đăng xuất |
+| GET / POST | `/api/customers` | Danh sách, tìm kiếm / tạo khách hàng |
+| GET / PUT / DELETE | `/api/customers/{id}` | Xem / cập nhật / xóa mềm khách hàng |
+| GET | `/api/customers/duplicates` | Phát hiện hồ sơ nghi trùng |
+| POST | `/api/customers/merge` | Gộp hai hồ sơ |
 
-| Tài liệu | Đường dẫn |
+Đọc thêm: [`docs/api-contract.md`](docs/api-contract.md), [`docs/srs.md`](docs/srs.md).
+
+## 5. Kiểm thử và minh chứng
+
+Bộ unit test PHP Native trong `tests/run_unit_tests.php` gồm **15 trường hợp**: 8 kiểm tra tạo khách hàng, 3 kiểm tra cập nhật, 4 kiểm tra điều kiện đầu vào khi Merge. Bộ này kiểm tra Validation/Guard, **không thay thế** Integration hoặc End-to-End Tests.
+
+Các tình huống API/E2E đã được ghi nhận trong quá trình làm bài: Create, Search, Duplicate Detection, Merge, xác thực/phân quyền/CSRF, MySQL Transaction Rollback. Để kiểm chứng lại, chạy các bước trong Mục 3–4 trên database thử nghiệm mới.
+
+**Ảnh minh chứng BT2** trong [`docs/evidence/`](docs/evidence/):
+
+| Mã | Minh chứng |
 |---|---|
-| Software Requirements Specification | `docs/srs.md` |
-| API Contract | `docs/api-contract.md` |
-| AI Declaration | `docs/ai-declaration.md` |
-| SQL Database Schema | `database/schema.sql` |
-| Unit Test Evidence | `docs/evidence/unit-tests-buoi10.txt` |
-| Các sơ đồ kiến trúc và dữ liệu | `docs/` |
-| Minh chứng kiểm thử | `docs/evidence/` |
+| 01 | [Migration thành công](docs/evidence/bt2-01-migration-success.png) |
+| 02 | [Chạy migration lần thứ hai: SKIP](docs/evidence/bt2-02-migration-idempotency.png) |
+| 03 | [15 Unit Tests PASS](docs/evidence/bt2-03-unit-tests-15-passed.png) |
+| 04 | [Kết nối MySQL](docs/evidence/bt2-04-database-connection.png) |
+| 05 | [Đăng nhập](docs/evidence/bt2-05-login-success.png) |
+| 06 | [Tạo khách hàng](docs/evidence/bt2-06-create-customer-success.png) |
+| 07 | [Tra cứu có kết quả](docs/evidence/bt2-07-search-customer-found.png) |
+| 08 | [Tra cứu không có kết quả](docs/evidence/bt2-08-search-no-results.png) |
+| 09 | [Phát hiện hồ sơ trùng](docs/evidence/bt2-09-duplicate-detection.png) |
+| 10 | [Merge thành công](docs/evidence/bt2-10-merge-success.png) |
+| 11 | [Khách hàng ACTIVE sau Merge](docs/evidence/bt2-11-active-customers-after-merge.png) |
+| 12 | [Trạng thái trong MySQL sau Merge](docs/evidence/bt2-12-merge-database-status.png) |
+| 13 | [Lịch sử Merge](docs/evidence/bt2-13-merge-history.png) |
 
-## 9. Tiến độ thực hiện
+Các ảnh là **bằng chứng từ những lần kiểm thử trước**. Tệp dữ liệu và ID khách hàng có thể khác khi dựng lại từ đầu.
 
-### BT1 – Phân tích và Thiết kế
+## 6. Cấu trúc Repository và trạng thái hiện tại
 
-- [x] Xây dựng tài liệu SRS.
-- [x] Phân tích Use Case.
-- [x] Thiết kế kiến trúc hệ thống.
-- [x] Thiết kế ERD và SQL DDL.
-- [x] Thiết kế Wireframe.
-- [x] Khai báo sử dụng AI.
+```text
+.
+├── .env.example
+├── README.md
+├── database/
+│   ├── schema.sql                 # SQL DDL gốc; không dùng để khởi tạo clean clone BT2
+│   ├── seed.sql                   # Seeder cũ chỉ định USE smartcrm; KHÔNG chạy cho clean clone
+│   ├── migrate.php                # Migration runner smartcrm_bt2_*
+│   ├── seed_bt2.php               # Seeder BT2 an toàn + tạo tài khoản demo (tệp bổ sung)
+│   └── migrations/001_initial.sql
+├── src/
+│   ├── config/
+│   ├── controllers/
+│   ├── repositories/
+│   ├── security/
+│   ├── services/
+│   ├── validators/
+│   └── public/index.php
+├── frontend/
+│   ├── package.json
+│   ├── package-lock.json          # npm ci sử dụng lock file này
+│   ├── vite.config.js
+│   └── src/
+├── tests/
+│   ├── run_unit_tests.php
+│   └── test_db.php
+└── docs/
+    ├── srs.md
+    ├── api-contract.md
+    ├── thay-doi-thiet-ke.md
+    ├── ai-disclosure.md
+    └── evidence/
+```
 
-### Sprint 1 – Customer CRUD
+**Đã có trong mã được rà soát:** FR1–FR5, Customer CRUD API, PHP Session + RBAC + CSRF, dịch vụ phát hiện trùng, MySQL Transaction cho Merge, 3 giao diện chính, 15 unit tests, migration và ảnh minh chứng.
 
-- [x] Xây dựng Controller – Service – Repository.
-- [x] Kết nối PHP với MySQL.
-- [x] Tạo hồ sơ khách hàng.
-- [x] Tra cứu và xem chi tiết hồ sơ.
-- [x] Cập nhật hồ sơ.
-- [x] Xóa mềm hồ sơ.
-- [x] Kiểm thử các tình huống HTTP 400, 404 và 409.
+**Giới hạn cần ghi nhận trung thực trước khi nộp:**
 
-### Sprint 2 – Authentication, Duplicate Detection và Merge
+- **Chưa xác minh tiêu chí SE “≥ 2 thực thể đủ CRUD”**: các API Customer đã có CRUD; `users` và `roles` hiện chủ yếu phục vụ đăng nhập/phân quyền, chưa được xác nhận là hai CRUD module đầy đủ.
+- 15 unit tests chủ yếu kiểm tra Validation và Merge guards; kiểm thử Integration/E2E hiện có minh chứng thao tác thủ công, không nên gọi là bộ test tự động cho toàn hệ thống.
+- Chưa đo thực nghiệm NFR1 trên tập 65.000 khách hàng; đây vẫn là mục tiêu thiết kế.
+- Seeder `database/seed_bt2.php` và README mới phải được đưa vào repo và thử lại trong **clone mới** trước khi phát hành tag.
+- Chưa kiểm tra được việc tạo Docker image hay chạy Linux/macOS với cấu hình PHP Session phụ thuộc `%LOCALAPPDATA%`.
 
-- [x] Authentication bằng PHP Session.
-- [x] Role-Based Authorization.
-- [x] CSRF Protection.
-- [x] Phát hiện hồ sơ nghi trùng (FR4).
-- [x] Merge Backend và lưu lịch sử (FR5).
-- [x] Giao diện React để so sánh và gộp hồ sơ.
-- [x] Kiểm thử Merge End-to-End.
-- [x] Kiểm thử Transaction Rollback (NFR4).
-- [x] Chạy 15 Unit Tests thành công.
-- [x] Lưu kết quả Unit Tests vào `docs/evidence/`.
+## 7. Tài liệu, AI và thay đổi từ BT1
 
-### Công việc hoàn thiện
+- [`docs/srs.md`](docs/srs.md): yêu cầu và Use Case.
+- [`docs/api-contract.md`](docs/api-contract.md): hợp đồng API.
+- [`docs/thay-doi-thiet-ke.md`](docs/thay-doi-thiet-ke.md): quyết định điều chỉnh thiết kế sau phản hồi BT1.
+- [`docs/ai-disclosure.md`](docs/ai-disclosure.md): khai báo sử dụng AI; cần bảo đảm có thông tin kiểm chứng cụ thể theo tiêu chí môn học.
+- `docs/bug-log.md`: **cần bổ sung bản ghi lỗi thực tế trước khi nộp**, không tạo lỗi giả hoặc bằng chứng giả.
 
-- [ ] Rà soát tài liệu và minh chứng kiểm thử.
-- [ ] Kiểm tra các tệp trước khi Commit.
-- [ ] Commit và Push mã nguồn lên GitHub.
-- [ ] Kiểm tra Repository sau khi Push.
+ChatGPT được sử dụng hỗ trợ phân tích yêu cầu, tài liệu, hướng dẫn lập trình và kiểm thử. Kết quả thực tế, câu lệnh chạy và lập luận trong bài nộp phải được sinh viên kiểm tra và giải thích được.
 
-## 10. Giới hạn và lưu ý
+## 8. Checklist trước khi nộp BT2
 
-Hệ thống hiện được xây dựng và thử nghiệm trong môi trường Local phục vụ mục đích học tập.
+- [ ] Làm theo **toàn bộ README từ một clone mới**, không dùng database cũ.
+- [ ] Migration lần đầu thành công; lần thứ hai báo `SKIP`; Seeder chạy lại không nhân đôi bản ghi.
+- [ ] Tạo demo login, mở được Frontend, chạy được Create → Search → Duplicate → Merge.
+- [ ] Chạy 15 unit tests trên clone mới, lưu ảnh PASS (ẩn mật khẩu và dữ liệu nhạy cảm).
+- [ ] Kiểm chứng một tình huống dữ liệu sai và Loading / Empty / Error.
+- [ ] Đối chiếu tiêu chí SE ≥ 2 thực thể đủ CRUD, không đánh dấu đạt nếu chưa có.
+- [ ] Bổ sung `docs/bug-log.md` từ lỗi thực tế và kiểm tra `docs/ai-disclosure.md`.
+- [ ] `git status` sạch; `.env` và secret không nằm trong Repository; lock file đã commit.
+- [ ] Hoàn thiện PDF BT2 một tệp 6–9 trang, đủ 7 phần, phụ lục AI và ảnh minh chứng.
+- [ ] Sau khi kiểm tra toàn bộ: hợp nhất phiên bản nộp, tạo và đẩy **tag `v0.2`**, kiểm tra URL GitHub của tag và nộp theo VLU E-learning.
 
-Các giới hạn cần tiếp tục xem xét:
-
-- Chưa xác nhận mức độ bao phủ Unit Tests cho toàn bộ chức năng.
-- Cần bổ sung kiểm thử bảo mật và các tình huống cạnh tranh dữ liệu.
-- Quy tắc phát hiện hồ sơ trùng hiện tập trung vào số điện thoại chuẩn hóa.
-- Cần tiếp tục đánh giá hiệu năng và các NFR khác theo SRS.
-- Không sử dụng dữ liệu hoặc tài khoản kiểm thử làm dữ liệu Production.
-
-## 11. Khai báo sử dụng AI
-
-ChatGPT (OpenAI) được sử dụng để hỗ trợ:
-
-- Giải thích yêu cầu bài tập.
-- Phân tích SRS, User Stories và Use Cases.
-- Tham khảo thiết kế kiến trúc, ERD và SQL DDL.
-- Hỗ trợ phát triển và kiểm tra mã nguồn.
-- Hỗ trợ xây dựng kịch bản kiểm thử.
-- Chuẩn bị tài liệu và tổng hợp kết quả.
-
-Người thực hiện chịu trách nhiệm kiểm tra mã nguồn, chạy thử hệ thống và xác nhận kết quả thực tế.
-
-Chi tiết được trình bày trong `docs/ai-declaration.md`.
+**Lưu ý:** Việc chuẩn bị README này **không đồng nghĩa** đã chạy thử lại trên một máy Windows khác, đã sửa xong tiêu chí 2 CRUD thực thể, hoặc đã tạo/push tag `v0.2`.
