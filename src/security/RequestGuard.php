@@ -3,9 +3,26 @@ declare(strict_types=1);
 
 final class RequestGuard
 {
+    private static $userResolver = null;
+
+    public static function setUserResolver(callable $resolver): void
+    {
+        self::$userResolver = $resolver;
+    }
+
     public static function requireLogin(): array
     {
         $user = $_SESSION['user'] ?? null;
+        if (is_array($user) && isset($user['user_id']) && self::$userResolver !== null) {
+            $current = (self::$userResolver)((int) $user['user_id']);
+            if (!$current || !(bool) $current['is_active']) {
+                unset($_SESSION['user']);
+                $user = null;
+            } else {
+                unset($current['is_active']);
+                $_SESSION['user'] = $user = $current;
+            }
+        }
 
         if (!is_array($user) || !isset($user['user_id'])) {
             CustomerController::json(401, [

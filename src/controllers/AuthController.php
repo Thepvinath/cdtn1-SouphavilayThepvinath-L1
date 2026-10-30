@@ -61,6 +61,7 @@ final class AuthController
     // GET /api/auth/me
     public function me(): void
     {
+        RequestGuard::requireLogin();
         if (!isset($_SESSION['user'])) {
             CustomerController::json(401, [
                 'error' => 'UNAUTHORIZED',
