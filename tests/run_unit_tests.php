@@ -205,6 +205,8 @@ testCase('UT15 - Merge: self-merge is rejected', function () use ($mergeService)
     });
 });
 
+require __DIR__ . '/user_unit_cases.php';
+
 echo PHP_EOL;
 echo "Results: {$passed} passed, {$failed} failed, " . ($passed + $failed) . " total" . PHP_EOL;
 exit($failed === 0 ? 0 : 1);

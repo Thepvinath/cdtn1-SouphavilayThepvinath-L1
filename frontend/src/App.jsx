@@ -6,6 +6,7 @@ import { authApi } from './api/auth.api';
 import LoginPage from './pages/LoginPage';
 import CreateCustomerPage from './pages/CreateCustomerPage';
 import DuplicatesPage from './pages/DuplicatesPage';
+import UsersPage from './pages/UsersPage';
 
 export default function App() {
   // Authentication
@@ -190,6 +191,7 @@ export default function App() {
             </button>
 
             <div className="nav-user">
+              {user.role_name === 'STORE_MANAGER' && <button type="button" className="nav-link" onClick={() => setPage('users')}>Nhân viên</button>}
               <span>
                 {user.full_name}
                 {' – '}
@@ -213,7 +215,9 @@ export default function App() {
             </div>
           )}
 
-          {page === 'create' ? (
+          {page === 'users' && user.role_name === 'STORE_MANAGER' ? (
+            <UsersPage currentUser={user} />
+          ) : page === 'create' ? (
             <CreateCustomerPage
               onCreated={handleCreated}
               onCancel={() => setPage('list')}

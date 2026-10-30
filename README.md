@@ -156,7 +156,7 @@ Migration tạo 5 bảng nghiệp vụ (`roles`, `users`, `customers`, `merge_op
 & "C:\xampp\php\php.exe" database/seed_bt2.php smartcrm_bt2_clean_clone
 ```
 
-Chạy lần đầu sẽ thêm vai trò, 3 hồ sơ khách hàng mẫu (gồm một cặp nghi trùng), và tài khoản `demo.sales@smartcrm.local` thuộc vai trò `SALES_STAFF`. **Mật khẩu demo được tạo ngẫu nhiên và hiển thị đúng một lần trong Terminal**. Ghi lại mật khẩu vào nơi riêng tư **bên ngoài Repository**; không đưa vào ảnh minh chứng hoặc tài liệu công khai.
+Chạy lần đầu sẽ thêm vai trò, 3 hồ sơ khách hàng mẫu (gồm một cặp nghi trùng), tài khoản `demo.sales@smartcrm.local` (`SALES_STAFF`) và `demo.manager@smartcrm.local` (`STORE_MANAGER`). **Mỗi mật khẩu demo được tạo ngẫu nhiên và hiển thị đúng một lần trong Terminal**. Ghi lại mật khẩu vào nơi riêng tư **bên ngoài Repository**; không đưa vào ảnh minh chứng hoặc tài liệu công khai. Chạy lại không đổi mật khẩu, vai trò hoặc trạng thái tài khoản đã tồn tại.
 
 Chạy lại lệnh trên để kiểm tra không nhân đôi dữ liệu. Nếu tài khoản demo đã tồn tại, Seeder sẽ không đổi mật khẩu. Các bản ghi Customer đã chuyển `MERGED` không được chuyển ngược về `ACTIVE` khi chạy lại Seeder.
 
@@ -249,7 +249,7 @@ Sau Merge thành công, Master giữ `ACTIVE`, Source chuyển `MERGED`, thông 
 
 ## 5. Kiểm thử và minh chứng
 
-Bộ unit test PHP Native trong `tests/run_unit_tests.php` gồm **15 trường hợp**: 8 kiểm tra tạo khách hàng, 3 kiểm tra cập nhật, 4 kiểm tra điều kiện đầu vào khi Merge. Bộ này kiểm tra Validation/Guard, **không thay thế** Integration hoặc End-to-End Tests.
+Bộ unit test PHP Native trong `tests/run_unit_tests.php` gồm **34 trường hợp**: 15 kiểm tra Customer/Merge hiện có và 19 kiểm tra User validation/manager guard. Bộ HTTP integration tự động trong `tests/run_user_integration.php` kiểm tra User CRUD, RBAC, CSRF, đăng nhập, thu hồi phiên bị vô hiệu hóa/hạ quyền, seeder và hồi quy Customer/duplicate/merge. Xem hướng dẫn User Management bên dưới.
 
 Các tình huống API/E2E đã được ghi nhận trong quá trình làm bài: Create, Search, Duplicate Detection, Merge, xác thực/phân quyền/CSRF, MySQL Transaction Rollback. Để kiểm chứng lại, chạy các bước trong Mục 3–4 trên database thử nghiệm mới.
 
@@ -313,8 +313,8 @@ Các ảnh là **bằng chứng từ những lần kiểm thử trước**. Tệ
 
 **Giới hạn cần ghi nhận trung thực trước khi nộp:**
 
-- **Chưa xác minh tiêu chí SE “≥ 2 thực thể đủ CRUD”**: các API Customer đã có CRUD; `users` và `roles` hiện chủ yếu phục vụ đăng nhập/phân quyền, chưa được xác nhận là hai CRUD module đầy đủ.
-- 15 unit tests chủ yếu kiểm tra Validation và Merge guards; kiểm thử Integration/E2E hiện có minh chứng thao tác thủ công, không nên gọi là bộ test tự động cho toàn hệ thống.
+- Hai thực thể có CRUD: Customer và User (DELETE User là vô hiệu hóa mềm). Role là dữ liệu tham chiếu, không phải CRUD thứ ba.
+- Unit và HTTP integration đã tự động hóa; chưa có browser E2E hoặc kiểm thử cạnh tranh nhiều kết nối.
 - Chưa đo thực nghiệm NFR1 trên tập 65.000 khách hàng; đây vẫn là mục tiêu thiết kế.
 - Seeder `database/seed_bt2.php` và README mới phải được đưa vào repo và thử lại trong **clone mới** trước khi phát hành tag.
 - Chưa kiểm tra được việc tạo Docker image hay chạy Linux/macOS với cấu hình PHP Session phụ thuộc `%LOCALAPPDATA%`.
@@ -342,4 +342,47 @@ ChatGPT được sử dụng hỗ trợ phân tích yêu cầu, tài liệu, hư
 - [ ] Hoàn thiện PDF BT2 một tệp 6–9 trang, đủ 7 phần, phụ lục AI và ảnh minh chứng.
 - [ ] Sau khi kiểm tra toàn bộ: hợp nhất phiên bản nộp, tạo và đẩy **tag `v0.2`**, kiểm tra URL GitHub của tag và nộp theo VLU E-learning.
 
-**Lưu ý:** Việc chuẩn bị README này **không đồng nghĩa** đã chạy thử lại trên một máy Windows khác, đã sửa xong tiêu chí 2 CRUD thực thể, hoặc đã tạo/push tag `v0.2`.
+**Lưu ý:** Các kiểm tra cục bộ không thay thế việc chạy lại trên máy Windows khác hoặc clone mới. Không có commit/push/tag/deploy được thực hiện trong phần triển khai User Management.
+
+## 9. BT2 User Management (second CRUD entity)
+
+Đăng nhập bằng `demo.manager@smartcrm.local` với mật khẩu ngẫu nhiên của seeder, chọn **Nhân viên**. Trang hỗ trợ danh sách (gồm tài khoản đã vô hiệu hóa), chi tiết/sửa, tạo và vô hiệu hóa nhân viên; có Loading, Empty, Error/Thử lại và thông báo thành công. Nút tự vô hiệu hóa bị khóa; backend luôn kiểm tra quyền độc lập với giao diện.
+
+| Method | Endpoint | Result |
+|---|---|---|
+| POST | `/api/users` | Create; 201 |
+| GET | `/api/users` | List active and disabled users; 200 |
+| GET | `/api/users/{id}` | Detail including disabled users; 200 |
+| PUT | `/api/users/{id}` | Update name, email, role, optional password; 200 |
+| DELETE | `/api/users/{id}` | Set `is_active=0`, retain row and audit references; 200 |
+
+All five endpoints require an authenticated, currently active `STORE_MANAGER`. Writes require the session's `X-CSRF-Token` from `GET /api/auth/csrf`. Request bodies for POST/PUT are JSON objects:
+
+```json
+{
+  "full_name": "Employee Name",
+  "email": "employee@example.com",
+  "role_name": "SALES_STAFF"
+}
+```
+
+For POST, add a private `password` value of 12–72 bytes; never use a public example as a password. For PUT, omit `password` to preserve it, or supply a new valid password. An explicitly empty password is rejected. Name/email are required and limited to 150 bytes; emails are trimmed and lowercased. Roles: `SALES_STAFF`, `STORE_MANAGER`, `MARKETING`. Unsupported fields (including `is_active` and `password_hash`) are rejected. Disabled accounts cannot be reactivated through these endpoints.
+
+Responses use `{ "data": ... }` and select only safe user fields; passwords/hashes are never returned. Errors: 400 validation/JSON, 401 unauthenticated/disabled, 403 role/CSRF, 404 missing user, 405 method, 409 duplicate email or manager safeguard. Email remains reserved after disable. Repeated DELETE is idempotent except self-disable is always rejected.
+
+The service rejects self-disable and removing the last active manager through disable or demotion. All user mutations lock the existing manager role row in a transaction; the unique email index also protects concurrent duplicate writes. Protected requests and `/api/auth/me` reload current account status/role, so disabled sessions and stale manager permissions lose access immediately. No schema changes are required; existing migration `001_initial.sql` already defines the necessary fields and constraints.
+
+Safe demo setup: use the clean-clone instructions above with `.env` pointing to your dedicated `smartcrm_bt2_*` database, then run `php database/seed_bt2.php YOUR_BT2_DATABASE`. The seeder refuses `smartcrm` and configuration mismatches; it generates separate random sales/manager passwords and leaves existing accounts unchanged. Do not run the legacy `seed.sql`. The local development `.env` is not changed by this implementation.
+
+Run checks from the repository root (use `C:\xampp\php\php.exe` if PHP is not on PATH):
+
+```powershell
+& C:\xampp\php\php.exe tests/run_unit_tests.php
+& C:\xampp\php\php.exe tests/run_user_integration.php
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend run build
+```
+
+The integration runner requires MySQL, `pdo_mysql`, `curl`, permission to launch a local PHP server, and CREATE/DROP privileges for disposable `smartcrm_bt2_users_*` databases. It reads connection credentials from `.env` but never uses its DB_NAME: it creates a random test database, uses a temporary source/config copy, then drops only that generated database and removes temporary files. It does not modify the original `smartcrm` database or repository `.env`. Do not interrupt it during cleanup; an interrupted run may leave its dedicated test database behind.
+
+Local validation: **34 unit tests and 58 HTTP integration checks passed**, PHP syntax checks passed, ESLint passed, and Vite production build passed. Integration includes successful Customer CRUD, duplicate detection and merge with audit history, plus demo seeder refusal/idempotency checks. Fixed an existing extra closing brace in `frontend/src/index.css` that blocked CSS minification. Browser interaction/layout, concurrent-request stress, fresh-machine setup and 65,000-customer performance are not verified by these checks. Historical screenshots above predate User Management.

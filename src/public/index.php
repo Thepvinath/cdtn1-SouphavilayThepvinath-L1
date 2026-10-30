@@ -62,6 +62,10 @@ require_once __DIR__ . '/../controllers/MergeController.php';
 
 // Security
 require_once __DIR__ . '/../security/RequestGuard.php';
+require_once __DIR__ . '/../validators/UserValidator.php';
+require_once __DIR__ . '/../repositories/UserRepository.php';
+require_once __DIR__ . '/../services/UserService.php';
+require_once __DIR__ . '/../controllers/UserController.php';
 
 // ============================================
 // 3. HTTP REQUEST INFORMATION
@@ -81,6 +85,22 @@ try {
     // ========================================
 
     $pdo = Database::connect();
+    $userRepository = new UserRepository($pdo);
+    RequestGuard::setUserResolver(fn (int $id): ?array => $userRepository->find($id));
+
+    if (preg_match('#^/api/users(?:/([1-9][0-9]*))?/?$#', $path, $userMatches)) {
+        $actor = RequestGuard::requireRole(['STORE_MANAGER']);
+        $userId = isset($userMatches[1]) && $userMatches[1] !== '' ? (int) $userMatches[1] : null;
+        $allowed = $userId === null ? ['GET', 'POST'] : ['GET', 'PUT', 'DELETE'];
+        if (!in_array($method, $allowed, true)) {
+            header('Allow: ' . implode(', ', $allowed));
+            CustomerController::json(405, ['error' => 'METHOD_NOT_ALLOWED']);
+            return;
+        }
+        if ($method !== 'GET') RequestGuard::verifyCsrf();
+        (new UserController(new UserService($userRepository)))->handle($method, $userId, (int) $actor['user_id']);
+        return;
+    }
 
     // Customer components
     $repository = new CustomerRepository($pdo);

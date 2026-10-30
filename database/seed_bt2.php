@@ -100,7 +100,26 @@ SQL
             throw new RuntimeException('Could not create the local demo login');
         }
     }
+    $managerEmail = 'demo.manager@smartcrm.local';
+    $findUser->execute([$managerEmail]);
+    $managerPassword = null;
+    if (!$findUser->fetchColumn()) {
+        $managerPassword = bin2hex(random_bytes(16));
+        $managerHash = password_hash($managerPassword, PASSWORD_DEFAULT);
+        $managerInsert = $pdo->prepare("INSERT INTO users(role_id, full_name, email, password_hash, is_active) SELECT role_id, 'Local Demo Manager', ?, ?, 1 FROM roles WHERE role_name='STORE_MANAGER'");
+        $managerInsert->execute([$managerEmail, $managerHash]);
+        if ($managerInsert->rowCount() !== 1) {
+            throw new RuntimeException('Could not create demo manager');
+        }
+    }
     $pdo->commit();
+
+    echo "Demo manager: {$managerEmail}\n";
+    if ($managerPassword !== null) {
+        echo "LOCAL MANAGER PASSWORD (shown only once): {$managerPassword}\n";
+    } else {
+        echo "SKIP: manager exists; password, role and active status unchanged.\n";
+    }
 
     echo "SEED SUCCESS: {$targetDb}\n";
     echo "Demo user: {$email}\n";
