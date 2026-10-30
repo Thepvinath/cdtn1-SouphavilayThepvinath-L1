@@ -4,7 +4,7 @@
 
 - **Luồng nghiệp vụ:** L1 – Tạo, tra cứu, gộp hồ sơ khách hàng trùng
 - **Sinh viên:** Thepvinath Souphavilay · **MSSV:** 237480201IS03
-- **Repository:** https://github.com/Thepvinath/smartcrm-237480201is03-customer-profile-management
+- **Repository:** https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1
 - **Nhánh phát triển:** `dev` → `main` · **Tag nộp BT2:** `v0.2` (đối chiếu tag với commit cuối của `main` trước khi nộp)
 
 > **Mục đích của README:** Người chấm có thể clone mã nguồn vào một thư mục mới, cấu hình MySQL, tạo dữ liệu demo, chạy API + giao diện và chạy bộ kiểm thử theo đúng từng bước mà không cần dữ liệu có sẵn trên máy của sinh viên.
@@ -73,7 +73,7 @@ cd $HOME
 ```
 
 ```powershell
-git clone --branch dev --single-branch https://github.com/Thepvinath/smartcrm-237480201is03-customer-profile-management.git smartcrm-bt2-clean-check
+git clone --branch dev --single-branch https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1.git smartcrm-bt2-clean-check
 ```
 
 ```powershell
@@ -83,7 +83,7 @@ cd smartcrm-bt2-clean-check
 **Khi đã phát hành `v0.2`**, giảng viên thay lệnh clone ở trên bằng:
 
 ```powershell
-git clone --branch v0.2 --single-branch https://github.com/Thepvinath/smartcrm-237480201is03-customer-profile-management.git smartcrm-bt2-grading
+git clone --branch v0.2 --single-branch https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1.git smartcrm-bt2-grading
 ```
 
 Sau khi clone bằng tag, chuyển vào `smartcrm-bt2-grading` thay vì `smartcrm-bt2-clean-check`. **Tag `v0.2` phải tồn tại trên GitHub trước khi dùng lệnh này.**
