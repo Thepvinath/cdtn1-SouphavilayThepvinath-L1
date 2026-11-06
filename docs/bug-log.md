@@ -38,6 +38,18 @@ Mỗi bug được phát hiện bởi một test case trong [`docs/test-report.m
 | 6. Cách sửa | Trong `normalizePhone()`, sau khi xoá ký tự không phải số: nếu chuỗi có **11 chữ số và bắt đầu bằng `84`** thì đổi thành `0` + 9 chữ số còn lại. Điều kiện 11 chữ số giữ nguyên các số không phải của Việt Nam (ví dụ `+856 20 1234 5678`) và không đổi quy tắc 8–15 chữ số của validator. Chỉ sửa ở service vì đây là nơi duy nhất sinh `phone_normalized`. |
 | 7. Commit và xác nhận | [`1b9e87e`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/1b9e87e415da1de402dfc686774ce5acbce31495) · Chạy lại TC-09: cả 4 giá trị lưu `"0901234567"` → **PASS** ([`BUG-03-fixed.png`](screenshots/BUG-03-fixed.png)). Toàn bộ `tests/run_all.php` PASS ([`run-all-after-fix.png`](screenshots/run-all-after-fix.png)). **Giới hạn:** bản sửa áp dụng cho dữ liệu nhập mới; hồ sơ đã lưu trước đó với `84…` (nếu có) chưa được chuyển đổi. |
 
+### BUG-04 · Major – Giao diện hiện lỗi thô "Unexpected end of JSON input" khi mất kết nối backend
+
+| Dòng | Nội dung |
+|---|---|
+| 1. Mã và mức độ | **BUG-04 · Major.** Trạng thái **lỗi kết nối** – một trong ba trạng thái bắt buộc của giao diện (đề BT2, thành phần 3) – hiển thị thông báo kỹ thuật của trình duyệt, người dùng không biết nguyên nhân và cách xử lý. Dữ liệu không bị sai hay lộ (không phải Critical); có cách làm tạm là bấm "Thử lại" sau khi backend chạy lại. |
+| 2. Phát hiện bởi | Tình huống kiểm thử "tắt một thành phần phụ trợ rồi thử lại nghiệp vụ chính" (đề BT2 mục 4.3 bước 5): tắt backend PHP khi giao diện đang mở, ngày 06/11/2026 trên Windows + Chrome, commit `a4225b7`; ảnh [`BUG-04-before.png`](screenshots/BUG-04-before.png). |
+| 3. Triệu chứng | Trang "Danh sách khách hàng" hiện chữ đỏ `Failed to execute 'json' on 'Response': Unexpected end of JSON input` kèm nút "Thử lại"; trang "Hồ sơ trùng" hiện cùng thông báo. |
+| 4. Cách tái lập | 1. Terminal 1: `& "C:\xampp\php\php.exe" -S 127.0.0.1:8000 -t src/public src/public/index.php`. 2. Terminal 2: `cd frontend; npm run dev`, mở `http://127.0.0.1:5173`, đăng nhập. 3. Bấm `Ctrl + C` ở Terminal 1 để tắt backend. 4. Bấm "Tìm kiếm". |
+| 5. Nguyên nhân | Khi backend tắt, proxy của Vite trả HTTP 5xx với **thân phản hồi rỗng**. Hàm `request()` trong `frontend/src/api/client.js` gọi `response.json()` **trước khi kiểm tra `response.ok`**, nên `json()` ném `SyntaxError` và thông báo thô này đi thẳng lên giao diện thay cho thông báo của ứng dụng. `frontend/src/api/merge.api.js` tự gọi `fetch` + `json()` riêng (không qua lớp client), nên có cùng lỗi. |
+| 6. Cách sửa | Trong `client.js`: thêm `parseResponse()` đọc thân phản hồi bằng `text()`, chỉ `JSON.parse` khi có nội dung; phản hồi lỗi không có JSON → thông báo "Không thể kết nối đến hệ thống. Vui lòng kiểm tra kết nối và thử lại." (5xx) hoặc "Yêu cầu thất bại (HTTP …)"; thêm `send()` đổi lỗi mạng của `fetch` thành cùng thông báo. Phản hồi lỗi có JSON vẫn hiển thị `message` của backend như cũ. `merge.api.js` chuyển sang dùng `getCsrfToken()`, `send()`, `parseResponse()` của lớp client, giữ nguyên giá trị trả về nên `DuplicatesPage.jsx` không phải sửa. |
+| 7. Commit và xác nhận | [`260d285`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/260d28516563b62d4fa48bcf1b7605ee099aa627) · Tái lập lại đúng các bước ở dòng 4: trang hiện "Không thể kết nối đến hệ thống. Vui lòng kiểm tra kết nối và thử lại." kèm nút "Thử lại" ([`BUG-04-fixed.png`](screenshots/BUG-04-fixed.png)). Bản sửa chỉ thay đổi frontend; backend và `tests/run_all.php` không bị ảnh hưởng. |
+
 > Mục 2–6 dưới đây là nhật ký lỗi và vấn đề vận hành của **BT2**, giữ nguyên để truy vết.
 
 ## 2. Danh sách vấn đề
