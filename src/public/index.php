@@ -226,7 +226,10 @@ try {
     ) {
 
         // GET - List or search customers
+        // BUG-02: doc du lieu khach hang cung phai dang nhap (NFR2, BR4)
         if ($method === 'GET') {
+            RequestGuard::requireLogin();
+
             $controller->index();
             return;
         }
@@ -265,6 +268,8 @@ try {
     ) {
 
         if ($method === 'GET') {
+            RequestGuard::requireLogin();
+
             $controller->duplicates();
             return;
         }
@@ -335,6 +340,8 @@ try {
 
         // GET - Customer detail
         if ($method === 'GET') {
+            RequestGuard::requireLogin();
+
             $controller->show($id);
             return;
         }
