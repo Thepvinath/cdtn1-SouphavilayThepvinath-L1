@@ -26,7 +26,10 @@ final class CustomerService
         return $this->repository->findById($id);
     }
 
-    // BR2: Chuẩn hóa số điện thoại
+    // BR2 (QT-02): Chuẩn hóa số điện thoại
+    // - Bỏ mọi ký tự không phải chữ số (dấu cách, dấu chấm, "+", ...)
+    // - Số Việt Nam có mã quốc gia 84 + 9 chữ số (+84xxxxxxxxx, 84xxxxxxxxx)
+    //   được quy về dạng 10 chữ số bắt đầu bằng 0 (0xxxxxxxxx).
     private function normalizePhone(string $phone): string
     {
         $normalized = preg_replace('/[^0-9]/', '', $phone);
@@ -35,6 +38,12 @@ final class CustomerService
             throw new InvalidArgumentException(
                 'So dien thoai khong hop le'
             );
+        }
+
+        // BUG-03: trước đây "+84 901 234 567" được lưu thành "84901234567",
+        // không khớp với "0901234567" nên kiểm tra trùng (BR1) bị bỏ sót.
+        if (strlen($normalized) === 11 && str_starts_with($normalized, '84')) {
+            $normalized = '0' . substr($normalized, 2);
         }
 
         return $normalized;

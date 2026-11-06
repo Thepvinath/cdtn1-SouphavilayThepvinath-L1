@@ -1,24 +1,13 @@
+import { BASE_URL, getCsrfToken, parseResponse, send } from './client';
+
 export async function mergeCustomers(masterId, sourceId) {
   // 1. Obtain CSRF token using the current session
-  const csrfResponse = await fetch('/api/auth/csrf', {
-    credentials: 'include',
-  });
-
-  if (!csrfResponse.ok) {
-    throw new Error('Khong the lay CSRF token');
-  }
-
-  const csrfResult = await csrfResponse.json();
-  const csrfToken = csrfResult.data?.csrf_token;
-
-  if (!csrfToken) {
-    throw new Error('CSRF token khong hop le');
-  }
+  const csrfToken = await getCsrfToken();
 
   // 2. Send Merge request
-  const response = await fetch('/api/customers/merge', {
+  const response = await send(`${BASE_URL}/customers/merge`, {
     method: 'POST',
-    credentials: 'include',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       'X-CSRF-Token': csrfToken,
@@ -29,13 +18,7 @@ export async function mergeCustomers(masterId, sourceId) {
     }),
   });
 
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.message || `Merge failed: HTTP ${response.status}`
-    );
-  }
-
-  return result;
+  // 3. Return the full body ({ message, data }) as before;
+  //    empty or non-JSON responses become a readable error (BUG-04)
+  return parseResponse(response);
 }

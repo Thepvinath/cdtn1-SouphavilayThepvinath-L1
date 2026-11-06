@@ -74,3 +74,26 @@
 ## 4. Trạng thái kiểm chứng
 
 Nội dung trên là nhật ký quyết định thiết kế. Việc một mục có trong nhật ký không tự động chứng minh rằng tệp đã được commit hoặc test đã PASS. Khi hoàn thành mỗi mục, kiểm tra lại mã nguồn, ảnh kết quả, nhật ký Git và bổ sung bằng chứng tương ứng vào repo.
+
+## 5. Quyết định sau phản hồi Bài tập 2 – Buổi 14
+
+- **Kết quả BT2:** Giảng viên xác nhận đạt đủ các mục kiểm chứng chung và mục theo track SE (bảng 4.2 đề BT2).
+- **Điểm mạnh được ghi nhận:** React + PHP + MySQL; CRUD khách hàng (xóa mềm) và người dùng (vô hiệu hóa); phát hiện và gộp hồ sơ trùng theo SĐT chuẩn hóa trong giao dịch; đăng nhập; ảnh chạy thật đối chiếu MySQL Workbench; commit đều.
+- **Cần khắc phục:** (1) nộp `.docx` thay vì một tệp PDF; (2) README cần ghi rõ lệnh chạy kiểm thử.
+
+### TD-09 – Nộp một tệp PDF thay vì .docx
+- **Phản hồi của GV:** Nộp .docx thay vì một tệp PDF.
+- **Quyết định:** SỬA (quy trình nộp bài).
+- **Lý do:** Đề bài yêu cầu nộp một tệp PDF duy nhất, đặt tên `BT<n>_<MSSV>_<Họ tên không dấu>.pdf`.
+- **Ảnh hưởng:** Không ảnh hưởng mã nguồn. Từ BT3, báo cáo được xuất ra `BT3_237480201IS03_ThepvinathSouphavilay.pdf`; mở lại tệp PDF để kiểm tra trước khi nộp lên VLU E-learning.
+
+### TD-10 – README ghi rõ lệnh chạy kiểm thử
+- **Phản hồi của GV:** README cần ghi rõ lệnh chạy kiểm thử.
+- **Quyết định:** SỬA.
+- **Lý do:** Lệnh kiểm thử trước đây nằm rải rác trong mục 3.6, lẫn với lệnh kiểm tra kết nối và lint/build; người chấm không thấy ngay một lệnh duy nhất. BT3 (mục C3) yêu cầu bộ kiểm thử chạy PASS bằng một lệnh.
+- **Ảnh hưởng:** Thêm `tests/run_all.php` chạy lần lượt `tests/run_unit_tests.php` và `tests/run_user_integration.php`, trả mã thoát 0/1. README mục 3.6 đổi thành "Chạy kiểm thử" với đúng một lệnh `& "C:\xampp\php\php.exe" tests/run_all.php` và kết quả mong đợi; mục 5 và cây thư mục tham chiếu cùng lệnh. Test Plan (`docs/test-plan.md`) dùng cùng lệnh này.
+
+### TD-11 – Giữ nguyên thiết kế lõi BT2
+- **Quyết định:** GIỮ NGUYÊN.
+- **Lý do:** GV xác nhận đạt đủ mục kiểm chứng; không có nhận xét về kiến trúc, mô hình dữ liệu hay nghiệp vụ.
+- **Ảnh hưởng:** Giữ nguyên phạm vi L1, 5 bảng nghiệp vụ và kiến trúc tách lớp. Các lỗi tự phát hiện khi kiểm thử BT3 được ghi vào `docs/bug-log.md` và sửa theo từng commit riêng, không ghi thành thay đổi thiết kế.

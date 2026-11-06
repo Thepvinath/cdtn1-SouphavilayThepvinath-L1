@@ -162,13 +162,46 @@ Chạy lại lệnh trên để kiểm tra không nhân đôi dữ liệu. Nếu
 
 > Nếu vừa hoàn thành Merge và muốn demo lại với một cặp trùng chưa gộp, hãy sử dụng **database thử nghiệm mới** theo cùng quy trình thay vì xóa/sửa dữ liệu cũ tùy tiện. Không chạy Seeder này trên dữ liệu Production.
 
-### 3.6. Kiểm tra kết nối và chạy unit test
+### 3.6. Chạy kiểm thử
+
+> **Lệnh kiểm thử duy nhất** — chạy toàn bộ unit test và HTTP integration test, từ thư mục gốc dự án:
+>
+> ```powershell
+> & "C:\xampp\php\php.exe" tests/run_all.php
+> ```
+>
+> Kết quả mong đợi ở cuối Terminal:
+>
+> ```text
+> [PASS] Unit tests (exit code 0)
+> [PASS] HTTP integration tests (exit code 0)
+> [PASS] BT3 test cases (TC-01..TC-12) (exit code 0)
+>
+> ALL TEST SUITES PASSED
+> ```
+>
+> Lệnh trả mã thoát `0` khi mọi bộ PASS và `1` khi có bộ FAIL. Điều kiện: đã làm xong bước 3.3 (`.env` đúng tài khoản MySQL) và MySQL Server đang chạy. Bộ integration và bộ BT3 tự tạo rồi xoá database tạm `smartcrm_bt2_users_*` / `smartcrm_bt2_tc_*`, nên tài khoản MySQL cần quyền `CREATE DATABASE` và `DROP DATABASE`.
+
+Các lệnh dưới đây dùng khi cần chạy riêng từng phần.
+
+Chạy 12 test case của BT3 ([`docs/test-plan.md`](docs/test-plan.md)), hoặc chỉ một test case theo mã:
+
+```powershell
+& "C:\xampp\php\php.exe" tests/run_bt3_cases.php
+& "C:\xampp\php\php.exe" tests/run_bt3_cases.php TC-05
+```
+
+Mỗi test case in ra tiền điều kiện, dữ liệu thử, kết quả mong đợi, kết quả thực tế và PASS/FAIL.
+
+Kiểm tra kết nối MySQL:
 
 ```powershell
 & "C:\xampp\php\php.exe" tests/test_db.php
 ```
 
 Kỳ vọng: `MySQL connection: SUCCESS`, tên database `smartcrm_bt2_clean_clone`, `Tables (6)`.
+
+Chỉ chạy unit test (không cần MySQL):
 
 ```powershell
 & "C:\xampp\php\php.exe" tests/run_unit_tests.php
@@ -273,6 +306,8 @@ Sau Merge thành công, Master giữ `ACTIVE`, Source chuyển `MERGED`, thông 
 
 ## 5. Kiểm thử và minh chứng
 
+**Lệnh chạy toàn bộ kiểm thử:** `& "C:\xampp\php\php.exe" tests/run_all.php` (xem mục 3.6).
+
 Bộ PHP native unit tests `tests/run_unit_tests.php` gồm **34 trường hợp**: 15 Customer/Merge và 19 User Validation/Manager Guard. Kết quả đã quan sát: **34 passed, 0 failed**.
 
 Bộ HTTP integration tự động `tests/run_user_integration.php` đã quan sát **58 passed, 0 failed**, bao gồm đăng nhập, RBAC/CSRF, User CRUD, khóa quyền Manager, Seeder an toàn, hồi quy Customer CRUD / Duplicate / Merge. Đây là **HTTP integration**, không phải Browser E2E. ESLint và Vite production build đã chạy thành công. Thử tải đồng thời và đo hiệu năng NFR1 với 65.000 hồ sơ chưa được thực hiện.
@@ -333,6 +368,8 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 │   ├── vite.config.js
 │   └── src/
 ├── tests/
+│   ├── run_all.php                # Lệnh kiểm thử duy nhất: unit + HTTP integration + BT3
+│   ├── run_bt3_cases.php          # 12 test case BT3 (TC-01..TC-12), chạy được từng mã
 │   ├── run_unit_tests.php
 │   ├── run_user_integration.php
 │   ├── user_unit_cases.php
