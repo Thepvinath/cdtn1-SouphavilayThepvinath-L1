@@ -22,6 +22,7 @@ $root = dirname(__DIR__);
 $suites = [
     'Unit tests' => 'tests/run_unit_tests.php',
     'HTTP integration tests' => 'tests/run_user_integration.php',
+    'BT3 test cases (TC-01..TC-12)' => 'tests/run_bt3_cases.php',
 ];
 
 $results = [];
