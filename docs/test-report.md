@@ -49,4 +49,19 @@ Cột "Các bước" mô tả những gì script thực hiện khi chạy lệnh
 - **Đã chạy:** 12/12 · **PASS:** 10 · **FAIL:** 2
 - **TC-10 FAIL** – lỗ hổng truy cập dữ liệu khách hàng khi chưa đăng nhập → **BUG-02 (Critical)**.
 - **TC-09 FAIL** – số điện thoại dạng `+84…` / `84…` không được chuẩn hoá theo QT-02 → **BUG-03 (Critical)**.
-- Hai lỗi được gỡ theo bốn bước (tái lập · khoanh vùng · sửa · xác nhận), mỗi lỗi một commit riêng; chi tiết trong [`docs/bug-log.md`](bug-log.md). Kết quả chạy lại sau khi sửa được bổ sung vào mục 5.
+- Hai lỗi được gỡ theo bốn bước (tái lập · khoanh vùng · sửa · xác nhận), mỗi lỗi một commit riêng; chi tiết trong [`docs/bug-log.md`](bug-log.md). Kết quả chạy lại sau khi sửa ở mục 5.
+
+## 5. Chạy lại sau khi sửa lỗi (lần chạy 2)
+
+| Mục | Giá trị |
+|---|---|
+| Ngày chạy | 06/11/2026 · cùng máy Windows của sinh viên |
+| Commit được kiểm thử | `1b9e87e` (sau hai commit sửa lỗi `e6a16aa` – BUG-02 và `1b9e87e` – BUG-03) |
+
+| Mã | Lần 1 | Kết quả thực tế lần 2 | Lần 2 | Ảnh |
+|---|---|---|---|---|
+| TC-10 | FAIL | /api/customers → HTTP 401; /api/customers/1 → HTTP 401; /api/customers/duplicates → HTTP 401 | **PASS** | [BUG-02-fixed.png](screenshots/BUG-02-fixed.png) |
+| TC-09 | FAIL | "+84 901 234 567" → "0901234567"; "84901234567" → "0901234567"; "0901.234.567" → "0901234567"; "0901234567" → "0901234567" | **PASS** | [BUG-03-fixed.png](screenshots/BUG-03-fixed.png) |
+| Toàn bộ | – | `tests/run_all.php`: Unit tests PASS · HTTP integration tests PASS · BT3 test cases **12 passed, 0 failed** · `ALL TEST SUITES PASSED` | **PASS** | [run-all-after-fix.png](screenshots/run-all-after-fix.png) |
+
+**Kết luận theo tiêu chí thành công của Test Plan (mục 3):** 12/12 test case đã chạy thật và có ảnh · mỗi quy tắc đã hiện thực có ≥ 1 test · 0 bug Critical đang mở · `tests/run_all.php` kết thúc bằng `ALL TEST SUITES PASSED` → **ĐẠT**.
