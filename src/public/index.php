@@ -5,15 +5,24 @@ declare(strict_types=1);
 // 1. PHP SESSION CONFIGURATION
 // ============================================
 
-$localAppData = getenv('LOCALAPPDATA');
+// BUG-05: thư mục session không còn phụ thuộc biến LOCALAPPDATA (chỉ có trên Windows).
+// Thứ tự ưu tiên:
+//   1. SESSION_SAVE_PATH (Docker / máy chủ Linux đặt biến này)
+//   2. %LOCALAPPDATA%\SmartCRM\sessions (máy Windows như hướng dẫn README)
+//   3. <thư mục tạm của hệ điều hành>/smartcrm-sessions
+$sessionDir = getenv('SESSION_SAVE_PATH') ?: '';
 
-if (!$localAppData) {
-    throw new RuntimeException(
-        'LOCALAPPDATA environment variable is missing'
-    );
+if ($sessionDir === '') {
+    $localAppData = getenv('LOCALAPPDATA');
+
+    $sessionDir = $localAppData
+        ? $localAppData . DIRECTORY_SEPARATOR . 'SmartCRM' . DIRECTORY_SEPARATOR . 'sessions'
+        : sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'smartcrm-sessions';
 }
 
-$sessionDir = $localAppData . '\\SmartCRM\\sessions';
+if (!is_dir($sessionDir)) {
+    @mkdir($sessionDir, 0700, true);
+}
 
 if (!is_dir($sessionDir) || !is_writable($sessionDir)) {
     throw new RuntimeException(
