@@ -90,6 +90,32 @@ $path = parse_url(
 try {
 
     // ========================================
+    // HEALTH CHECK (TD-13) - không cần đăng nhập
+    // Dùng cho healthcheck của Docker và mục "Verify it works".
+    // Không trả chi tiết lỗi (chuỗi kết nối, tên máy chủ...) ra ngoài.
+    // ========================================
+
+    if ($path === '/api/health' || $path === '/api/health/') {
+        if ($method !== 'GET') {
+            header('Allow: GET');
+            CustomerController::json(405, [
+                'error' => 'METHOD_NOT_ALLOWED',
+                'message' => 'Chi ho tro GET'
+            ]);
+            return;
+        }
+
+        try {
+            Database::connect()->query('SELECT 1')->fetchColumn();
+            CustomerController::json(200, ['status' => 'ok', 'database' => 'ok']);
+        } catch (Throwable $healthError) {
+            error_log('Health check: ' . $healthError->getMessage());
+            CustomerController::json(503, ['status' => 'error', 'database' => 'unavailable']);
+        }
+        return;
+    }
+
+    // ========================================
     // 4. DEPENDENCY INITIALIZATION
     // ========================================
 
