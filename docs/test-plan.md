@@ -83,5 +83,5 @@ PASS/FAIL được ghi trung thực. Test case FAIL sẽ được gỡ lỗi, gh
 | Dữ liệu mẫu | Seeder tạo 3 hồ sơ: `BT2 DEMO MASTER` và `BT2 DEMO SOURCE` cùng SĐT `0888802026` (cặp trùng cho TC-03), `BT2 DEMO NORMAL` SĐT `0888802027`; 2 tài khoản demo `SALES_STAFF` và `STORE_MANAGER` |
 | CSDL kiểm thử tự động | `tests/run_user_integration.php` tự tạo database tạm `smartcrm_bt2_users_<ngẫu nhiên>`, tự nạp migration và dữ liệu cần thiết, và **xoá database đó khi kết thúc**; không dùng dữ liệu có sẵn trên máy |
 | Dọn dữ liệu | Unit test không chạm CSDL (dùng đối tượng giả `NoDatabasePDO`). Khi cần chạy lại TC-03 (gộp) với cặp trùng chưa gộp: dựng database `smartcrm_bt2_*` mới theo README thay vì sửa tay dữ liệu cũ |
-| Lệnh chạy toàn bộ test tự động | `& "C:\xampp\php\php.exe" tests/run_all.php` |
+| Lệnh chạy toàn bộ test tự động | Windows/XAMPP: `& "C:\xampp\php\php.exe" tests/run_all.php` · Docker (BT3): `docker compose exec api php tests/run_all.php` – cùng bộ test, chạy trong container `api`, CSDL tạm tạo trong dịch vụ `db` |
 | Kết quả và minh chứng | `docs/test-report.md`, ảnh trong `docs/screenshots/` đặt tên theo mã test |
