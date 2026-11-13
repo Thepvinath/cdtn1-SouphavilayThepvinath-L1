@@ -84,6 +84,11 @@ export default function LoginPage({ onLogin }) {
           </button>
         </form>
 
+        <p className="login-demo-note">
+          Bản demo đồ án môn Chuyên đề tốt nghiệp 1 (Đại học Văn Lang) – chỉ có dữ liệu mẫu.
+          Chỉ dùng tài khoản demo, không nhập mật khẩu thật của bạn.
+        </p>
+
         <p className="login-footer">
           Smart CRM – Customer Profile Management
         </p>
