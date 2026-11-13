@@ -1,10 +1,10 @@
-# KHAI BÁO SỬ DỤNG AI – BT1 & BT2 (AI DISCLOSURE)
+# KHAI BÁO SỬ DỤNG AI – BT1, BT2 & BT3 (AI DISCLOSURE)
 
 **Đề tài:** Smart CRM – Mekong Mobile
 **Học phần:** Chuyên đề tốt nghiệp 1 — Track Software Engineering (SE)
 **Luồng nghiệp vụ:** L1 – Tạo, tra cứu, gộp hồ sơ khách hàng trùng
 **Sinh viên:** Thepvinath Souphavilay · **MSSV:** 237480201IS03
-**Cập nhật cho BT2:** 31/10/2026
+**Cập nhật cho BT2:** 31/10/2026 · **Cập nhật cho BT3 (giai đoạn 3, buổi 13–16):** 13/11/2026 – xem mục 6
 
 ## 1. Công cụ AI và mục đích sử dụng
 
@@ -39,8 +39,8 @@ Các công cụ đưa ra gợi ý hoặc tạo bản nháp; người thực hi�
 
 ## 4. Giới hạn và trách nhiệm
 
-- **Chưa xác minh:** Browser E2E tự động, chạy đồng thời nhiều request, đo tải trên 65.000 hồ sơ, tính tương thích Windows khác/Linux/macOS/Docker.
-- **Lỗi UI còn theo dõi:** khi Backend API không phản hồi phù hợp, màn hình đôi lúc hiển thị `Unexpected end of JSON input`; hiện ảnh đã chứng minh Error State và nút Retry, **không phải** bằng chứng lỗi đã được sửa.
+- **Chưa xác minh:** Browser E2E tự động, chạy đồng thời nhiều request, đo tải trên 65.000 hồ sơ, chạy trên máy macOS/Linux thật (gói Docker đã kiểm chứng trên Windows + Docker Desktop ở BT3).
+- *(Cập nhật BT3)* Lỗi `Unexpected end of JSON input` đã được sửa và kiểm chứng ở BUG-04 (`docs/bug-log.md`).
 - Các đề xuất Architecture/ERD/DDL từ AI được điều chỉnh dựa trên cấu trúc code thực tế; tài liệu không thay thế việc kiểm tra logic, transaction hay bảo mật.
 - Sinh viên chịu trách nhiệm cuối cùng về độ đúng, tính trung thực, bảo mật và khả năng giải thích mã nguồn, mô hình dữ liệu, các ca kiểm thử và báo cáo.
 
@@ -50,3 +50,15 @@ Tôi xác nhận đã sử dụng ChatGPT và Codex trong quá trình thực hi�
 
 **Sinh viên:** Thepvinath Souphavilay
 **MSSV:** 237480201IS03
+
+## 6. Bảng khai báo cho BT3 – Kiểm thử và đóng gói (buổi 13–16)
+
+| Công cụ | Dùng vào việc gì | Áp dụng ở tệp / hàm nào | Em đã kiểm chứng thế nào |
+|---|---|---|---|
+| Claude (Anthropic) | Đọc tài liệu buổi 13–16 và đề BT3; đề xuất Test Plan, 12 test case và viết bộ chạy test case | `docs/test-plan.md`; `tests/run_bt3_cases.php` (12 hàm TC-01…TC-12, `FakeCustomerRepository`, `setUpApiEnv`); `tests/run_all.php` | Tự chạy **từng test case** trên Windows (`tests/run_bt3_cases.php TC-xx`) và chụp ảnh `docs/screenshots/TC-01…TC-12.png`; lần chạy 1 ghi trung thực **10 PASS / 2 FAIL**; chạy lại sau sửa lỗi 12/12 PASS; chạy toàn bộ trong container Docker (`ALL TEST SUITES PASSED`). |
+| Claude (Anthropic) | Tìm nguyên nhân và đề xuất bản sửa lỗi, mỗi lỗi một commit | BUG-02 `src/public/index.php` (nhánh GET + `RequestGuard::requireLogin`); BUG-03 `CustomerService::normalizePhone`; BUG-04 `frontend/src/api/client.js` (`parseResponse`, `send`), `merge.api.js`; BUG-05 phần session đầu `index.php`; BUG-06 `src/config/Env.php` và 5 nơi gọi `Env::load`; BUG-07 `docker-compose.yml`; BUG-08 `CustomerController::maskCustomer` | Mỗi lỗi được **tái lập trước khi sửa** (test FAIL hoặc ảnh lỗi trên máy em: `TC-09.png`, `TC-10.png`, `BUG-04-before.png`, `BUG-07-before-*.png`), sau khi sửa chạy lại đúng bước tái lập và toàn bộ bộ test trên Windows (`TC-09`, `TC-10`, `BUG-04-fixed.png`, `run-all-after-fix.png`); repo đã kiểm ở chế độ PUBLIC bằng cửa sổ ẩn danh. |
+| Claude (Anthropic) | Viết gói Docker và cấu hình bảo mật | `Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`, `docker-compose.yml`, `docker/api-entrypoint.sh`, `docker/mysql-init/01-grant-test-databases.sh`, `.dockerignore`, `.gitattributes`, `.env.example`; `database/seed_bt2.php` (DEMO_* password); endpoint `/api/health` | **Phép thử máy trắng trên Windows** của em: clone vào thư mục mới → `cp .env.example .env` → `docker compose up -d --build`; lần đầu thất bại (BUG-07) và được ghi Bug Log; lần sau `docker compose ps` 3 dịch vụ healthy, `/api/health` ok, đăng nhập giao diện `localhost:8080`, test trong container PASS, restart không nhân đôi dữ liệu; ảnh `docs/screenshots/docker-*.png`. |
+| Claude (Anthropic) | Soạn tài liệu kỹ thuật tiếng Anh và checklist bảo mật | `docs/deployment-guide.md`, `docs/api-docs.md`, `docs/checklist-bao-mat.md` | Ví dụ request/response trong API docs **chép từ lần chạy thật**; số endpoint trong tài liệu (17) đối chiếu với các route trong `src/public/index.php`; mỗi mục checklist có lệnh/ảnh minh chứng, mục chưa làm (mục 3 – QT-14) ghi CHƯA LÀM; các lệnh của Deployment Guide (mục 2, 4, 5) đã được em chạy trên máy Windows với Docker Desktop. |
+| Claude (Anthropic) | Cập nhật README, Bug Log, Test Report, nhật ký thay đổi thiết kế, tệp PDF minh chứng buổi 14 | `README.md` (mục 0), `docs/bug-log.md`, `docs/test-report.md`, `docs/thay-doi-thiet-ke.md` (mục 5–6) | Đối chiếu với phản hồi BT2 của giảng viên, ảnh chụp và kết quả chạy thật; không chỉnh sửa số liệu, mã trạng thái hay nội dung thông báo trong ảnh. |
+
+**Cách làm việc:** công cụ AI đề xuất mã và tài liệu; em chạy mọi lệnh kiểm chứng trên máy Windows của em, chụp ảnh kết quả thật, quyết định commit/push và chịu trách nhiệm giải thích từng dòng mã, test case và mục Bug Log khi giảng viên hỏi. Commit do em đứng tên; một số commit đầu của giai đoạn này còn dòng `Co-Authored-By: Claude`.

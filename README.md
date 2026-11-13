@@ -1,15 +1,32 @@
 # SMART CRM – MEKONG MOBILE
 
-**Bài tập 2 (BT2) — Chuyên đề tốt nghiệp 1 | Track Software Engineering (SE)**
+**Bài tập 3 (BT3) — Chuyên đề tốt nghiệp 1 | Track Software Engineering (SE)**
 
 - **Luồng nghiệp vụ:** L1 – Tạo, tra cứu, gộp hồ sơ khách hàng trùng
 - **Sinh viên:** Thepvinath Souphavilay · **MSSV:** 237480201IS03
 - **Repository:** https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1
-- **Nhánh phát triển:** `dev` → `main` · **Tag nộp BT2:** `v0.2` (đối chiếu tag với commit cuối của `main` trước khi nộp)
+- **Nhánh phát triển:** `dev` → `main` · **Tag nộp BT3:** `v1.0` · Tag nộp BT2 (giữ nguyên): `v0.2`
 
-> **Mục đích của README:** Người chấm có thể clone mã nguồn vào một thư mục mới, cấu hình MySQL, tạo dữ liệu demo, chạy API + giao diện và chạy bộ kiểm thử theo đúng từng bước mà không cần dữ liệu có sẵn trên máy của sinh viên.
->
-> Các lệnh dưới đây dành cho **PowerShell trên Windows + XAMPP + MySQL 8**. Phần cấu hình trên hệ điều hành khác chưa được kiểm chứng.
+## 0. Chạy hệ thống bằng Docker – hai lệnh
+
+Máy chỉ cần **Docker** (Docker Desktop đang chạy) và **Git**. Trong thư mục vừa clone:
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+Sau đó mở **http://localhost:8080** và đăng nhập `demo.sales@smartcrm.local` / `Demo-Sales-2026` (hoặc `demo.manager@smartcrm.local` / `Demo-Manager-2026` để thấy thêm trang Nhân viên). Bảng, dữ liệu mẫu và tài khoản demo được tạo **tự động** khi container `api` khởi động.
+
+Kiểm tra nhanh:
+
+```bash
+docker compose ps                                  # db, api, web: (healthy)
+curl -s http://localhost:8080/api/health           # {"status":"ok","database":"ok"}  (PowerShell: curl.exe)
+docker compose exec api php tests/run_all.php      # ALL TEST SUITES PASSED
+```
+
+Hướng dẫn đầy đủ bằng tiếng Anh (yêu cầu, biến môi trường, dữ liệu mẫu, cách kiểm tra, xử lý sự cố): **[`docs/deployment-guide.md`](docs/deployment-guide.md)**. Mục 3 bên dưới là cách dựng **thủ công không dùng Docker** trên Windows + XAMPP (cách chạy của BT2).
 
 ## 1. Giới thiệu và phạm vi
 
@@ -60,7 +77,9 @@ git --version
 
 Nếu PHP hoặc MySQL được cài ở đường dẫn/cổng khác, sửa lệnh hoặc `.env` tương ứng. **Đảm bảo MySQL Server đang chạy** trước khi thực hiện migration.
 
-## 3. Dựng lại hệ thống từ thư mục trống (Clean Clone)
+## 3. Dựng thủ công trên Windows + XAMPP (không dùng Docker)
+
+> Các lệnh trong mục này dành cho **PowerShell trên Windows + XAMPP + MySQL 8** (cách chạy đã dùng ở BT2). Cách chạy khuyến nghị cho BT3 là Docker (mục 0).
 
 > **Lưu ý an toàn:** Quy trình sử dụng **database riêng `smartcrm_bt2_clean_clone`**, không tác động vào database gốc `smartcrm`. Không chạy `database/schema.sql` hoặc `database/seed.sql` của bản cũ trên database cần bảo toàn dữ liệu. `database/seed.sql` hiện có dòng `USE smartcrm;`; đối với Clean Clone BT2 hãy sử dụng `database/seed_bt2.php` theo bước 3.5.
 
@@ -122,7 +141,11 @@ DB_USER=YOUR_MYSQL_USERNAME
 DB_PASSWORD=YOUR_MYSQL_PASSWORD
 APP_ENV=development
 APP_PORT=8000
+DEMO_SALES_PASSWORD=Demo-Sales-2026
+DEMO_MANAGER_PASSWORD=Demo-Manager-2026
 ```
+
+`DB_ROOT_PASSWORD` và `WEB_PORT` trong `.env.example` chỉ dùng cho Docker, có thể giữ nguyên.
 
 Đổi `YOUR_MYSQL_USERNAME`, `YOUR_MYSQL_PASSWORD` thành thông tin MySQL **của máy đang chạy**. Tệp `.env` được `.gitignore` loại trừ: **không commit hoặc gửi mật khẩu thật**. `APP_PORT` là giá trị cấu hình tham khảo; cổng thực tế của PHP server được chọn bởi tham số `-S` ở bước 3.7.
 
@@ -156,7 +179,7 @@ Migration tạo 5 bảng nghiệp vụ (`roles`, `users`, `customers`, `merge_op
 & "C:\xampp\php\php.exe" database/seed_bt2.php smartcrm_bt2_clean_clone
 ```
 
-Chạy lần đầu sẽ thêm vai trò, 3 hồ sơ khách hàng mẫu (gồm một cặp nghi trùng), và tài khoản `demo.sales@smartcrm.local` thuộc vai trò `SALES_STAFF`. **Mật khẩu demo được tạo ngẫu nhiên và hiển thị đúng một lần trong Terminal**. Ghi lại mật khẩu vào nơi riêng tư **bên ngoài Repository**; không đưa vào ảnh minh chứng hoặc tài liệu công khai.
+Chạy lần đầu sẽ thêm vai trò, 3 hồ sơ khách hàng mẫu (gồm một cặp nghi trùng), tài khoản `demo.sales@smartcrm.local` (`SALES_STAFF`) và `demo.manager@smartcrm.local` (`STORE_MANAGER`). Mật khẩu lấy từ `DEMO_SALES_PASSWORD` / `DEMO_MANAGER_PASSWORD` trong `.env`; nếu để trống, **mật khẩu được tạo ngẫu nhiên và hiển thị đúng một lần trong Terminal** – khi đó ghi lại vào nơi riêng tư **bên ngoài Repository**, không đưa vào ảnh minh chứng hoặc tài liệu công khai.
 
 Chạy lại lệnh trên để kiểm tra không nhân đôi dữ liệu. Nếu tài khoản demo đã tồn tại, Seeder sẽ không đổi mật khẩu. Các bản ghi Customer đã chuyển `MERGED` không được chuyển ngược về `ACTIVE` khi chạy lại Seeder.
 
@@ -346,7 +369,13 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 
 ```text
 .
-├── .env.example
+├── .env.example                   # Đủ mọi biến, giá trị mẫu (sao chép thành .env)
+├── .dockerignore / .gitattributes
+├── Dockerfile                     # Image api: php:8.3-cli-alpine + pdo_mysql
+├── docker-compose.yml             # db (mysql:8.0) · api · web (nginx), có healthcheck
+├── docker/
+│   ├── api-entrypoint.sh          # migrate -> seed -> PHP server
+│   └── mysql-init/01-grant-test-databases.sh
 ├── README.md
 ├── database/
 │   ├── schema.sql                 # SQL DDL gốc; không dùng để khởi tạo clean clone BT2
@@ -355,7 +384,7 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 │   ├── seed_bt2.php               # Seeder BT2 an toàn + tài khoản demo Sales/Manager
 │   └── migrations/001_initial.sql
 ├── src/
-│   ├── config/
+│   ├── config/                    # Database.php, Env.php (.env hoặc biến môi trường)
 │   ├── controllers/
 │   ├── repositories/
 │   ├── security/
@@ -363,6 +392,8 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 │   ├── validators/
 │   └── public/index.php
 ├── frontend/
+│   ├── Dockerfile                 # build Vite -> nginx:1.27-alpine
+│   ├── nginx.conf                 # phục vụ giao diện, proxy /api -> api:8000
 │   ├── package.json
 │   ├── package-lock.json          # npm ci sử dụng lock file này
 │   ├── vite.config.js
@@ -380,6 +411,10 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
     ├── thay-doi-thiet-ke.md
     ├── ai-disclosure.md
     ├── bug-log.md
+    ├── test-plan.md · test-report.md          # BT3
+    ├── deployment-guide.md · api-docs.md      # BT3, tiếng Anh
+    ├── checklist-bao-mat.md                   # BT3
+    ├── screenshots/                           # ảnh chạy thật BT3 (TC-xx, BUG-xx, docker-xx)
     ├── architecture-implemented-bt2.png
     ├── architecture-implemented-bt2.drawio
     └── evidence/
@@ -391,22 +426,25 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 
 - CRUD thứ hai là `users` với DELETE dưới hình thức **vô hiệu hóa**, không xóa cứng. `roles` không phải CRUD thứ ba.
 - 34/34 và 58/58 là kết quả đã quan sát trên môi trường phát triển; vẫn nên chạy lại trên clean clone của commit/tag cuối.
-- Có ảnh thủ công Loading, Empty, Error. Lỗi kỹ thuật trong thông báo Error chưa được sửa; không tuyên bố đã hoàn thành xử lý UX này.
+- Có ảnh thủ công Loading, Empty, Error. Thông báo lỗi kết nối đã được sửa ở BT3 (BUG-04).
 - Chưa có Browser E2E tự động hoặc bài đo stress cạnh tranh nhiều request.
 - Chưa đo thực nghiệm NFR1 tìm kiếm ≤2 giây trên 65.000 khách hàng.
-- Chưa xác minh dựng lại trên Linux/macOS hoặc Docker; hướng dẫn được kiểm chứng trên Windows/XAMPP.
+- Gói Docker đã được kiểm chứng bằng phép thử máy trắng trên Windows + Docker Desktop (BT3, xem `docs/test-report.md`); chưa thử trên máy macOS/Linux thật.
 
-## 7. Tài liệu, AI và thay đổi từ BT1
+## 7. Tài liệu, AI và thay đổi thiết kế
 
 - [`docs/srs.md`](docs/srs.md): yêu cầu và Use Case.
 - [`docs/api-contract.md`](docs/api-contract.md): hợp đồng API.
 - [`docs/thay-doi-thiet-ke.md`](docs/thay-doi-thiet-ke.md): quyết định điều chỉnh thiết kế sau phản hồi BT1.
 - [`docs/ai-disclosure.md`](docs/ai-disclosure.md): khai báo ChatGPT và Codex, phạm vi hỗ trợ và phương pháp kiểm chứng theo từng hạng mục.
-- [`docs/bug-log.md`](docs/bug-log.md): lỗi thực tế khi phát triển và dựng môi trường BT2; cần cập nhật thêm trường hợp Error JSON nếu sửa UI.
+- [`docs/bug-log.md`](docs/bug-log.md): Bug Log BT3 (BUG-02 … BUG-08, mẫu bảy dòng, link commit) và nhật ký lỗi BT2.
+- [`docs/test-plan.md`](docs/test-plan.md) · [`docs/test-report.md`](docs/test-report.md): kế hoạch và kết quả 12 test case chạy thật.
+- [`docs/deployment-guide.md`](docs/deployment-guide.md) · [`docs/api-docs.md`](docs/api-docs.md): hướng dẫn triển khai và tài liệu API (tiếng Anh).
+- [`docs/checklist-bao-mat.md`](docs/checklist-bao-mat.md): checklist bảo mật bảy mục có minh chứng.
 
 ChatGPT hỗ trợ phân tích, tài liệu, hướng dẫn kiểm thử và báo cáo; **Codex trong VS Code** hỗ trợ hiện thực User CRUD và bổ sung test tự động. Sinh viên chịu trách nhiệm chạy chương trình, kiểm tra MySQL, quan sát giao diện, đánh giá thay đổi và giải thích được kết quả. Xem tài liệu AI Disclosure để phân biệt việc AI hỗ trợ với bằng chứng chạy thực tế.
 
-## 8. Checklist trước khi nộp BT2
+## 8. Checklist trước khi nộp BT2 (lưu lại để truy vết)
 
 - [ ] Dựng từ **clean clone của commit/tag cuối** và database `smartcrm_bt2_*` riêng; không thao tác lên `smartcrm` gốc.
 - [ ] Migration lần đầu `SUCCESS`, chạy lại `SKIP`; Seeder chạy lại không nhân đôi bản ghi, không thay đổi mật khẩu đã có.

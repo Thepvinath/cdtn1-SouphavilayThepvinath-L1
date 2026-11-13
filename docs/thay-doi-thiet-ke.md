@@ -97,3 +97,32 @@ Nội dung trên là nhật ký quyết định thiết kế. Việc một mục
 - **Quyết định:** GIỮ NGUYÊN.
 - **Lý do:** GV xác nhận đạt đủ mục kiểm chứng; không có nhận xét về kiến trúc, mô hình dữ liệu hay nghiệp vụ.
 - **Ảnh hưởng:** Giữ nguyên phạm vi L1, 5 bảng nghiệp vụ và kiến trúc tách lớp. Các lỗi tự phát hiện khi kiểm thử BT3 được ghi vào `docs/bug-log.md` và sửa theo từng commit riêng, không ghi thành thay đổi thiết kế.
+
+## 6. Thay đổi so với BT2 – Buổi 15–16 (đóng gói và bảo mật)
+
+Mỗi thay đổi ghi ba ý: thay đổi gì · vì sao · ảnh hưởng tới thành phần nào. Các lỗi sửa trong giai đoạn này (BUG-02 … BUG-08) được ghi chi tiết ở `docs/bug-log.md`; mục này chỉ ghi những thay đổi về cấu trúc, cấu hình và cách chạy hệ thống.
+
+### TD-12 – Mật khẩu tài khoản demo cấu hình được qua `.env`
+- **Thay đổi:** `database/seed_bt2.php` dùng `DEMO_SALES_PASSWORD` / `DEMO_MANAGER_PASSWORD` (≥ 8 ký tự) khi **tạo mới** tài khoản demo; để trống thì giữ cách cũ (mật khẩu ngẫu nhiên in một lần). Tài khoản đã có không bao giờ bị đổi mật khẩu.
+- **Vì sao:** người chấm chạy gói Docker không đọc được mật khẩu ngẫu nhiên chỉ in một lần trong log container; mục C1 yêu cầu dựng và kiểm tra hệ thống mà không phải hỏi sinh viên.
+- **Ảnh hưởng:** `database/seed_bt2.php`, `.env.example`, Deployment Guide mục 3–4, README mục 0 và 3.3/3.5.
+
+### TD-13 – Thêm endpoint `GET /api/health`
+- **Thay đổi:** endpoint không cần đăng nhập, chạy `SELECT 1`; trả 200 `{"status":"ok","database":"ok"}` hoặc 503 `{"status":"error","database":"unavailable"}`, không trả chi tiết lỗi.
+- **Vì sao:** healthcheck của Docker và mục "Verify it works" của Deployment Guide cần một cách kiểm tra hệ thống đã lên mà không phải đăng nhập.
+- **Ảnh hưởng:** `src/public/index.php`; `docker-compose.yml` (healthcheck `api`, `web`); `docs/api-docs.md` mục 2.1. Không đổi FR1–FR5.
+
+### TD-14 – Đóng gói Docker: ba dịch vụ `db` · `api` · `web`
+- **Thay đổi:** thêm `Dockerfile` (php:8.3-cli-alpine + pdo_mysql, chạy bằng `www-data`), `frontend/Dockerfile` (build Vite → nginx:1.27-alpine, proxy `/api`), `docker-compose.yml` (mysql:8.0 không mở cổng ra ngoài, healthcheck cả ba dịch vụ, `api` chờ `db` healthy, `web` chờ `api` healthy), `docker/api-entrypoint.sh` (migrate → seed → PHP server), `docker/mysql-init/` (cấp quyền cho bộ kiểm thử tạo CSDL tạm `smartcrm_bt2_*`), `.dockerignore`, `.gitattributes` (tệp `.sh` luôn LF). Cấu hình đọc từ `.env` (`env_file`) hoặc biến môi trường qua `src/config/Env.php` (BUG-06, BUG-07); thư mục session cấu hình được (BUG-05).
+- **Vì sao:** BT3 thành phần 4 / mục cốt lõi C1 – hệ thống phải dựng lại được từ thư mục trống bằng ≤ 2 lệnh; README bằng lời (mức BT2) không đạt.
+- **Ảnh hưởng:** thêm tệp hạ tầng nêu trên; `.env.example` đổi giá trị mẫu (`DB_NAME=smartcrm_bt2_docker`, `DB_USER=smartcrm`) và thêm `DB_ROOT_PASSWORD`, `WEB_PORT`, `DEMO_*`. Kiến trúc lớp (Controller → Service/Validator → Repository) và 5 bảng nghiệp vụ **không đổi**; cách chạy thủ công Windows/XAMPP của BT2 vẫn dùng được (README mục 3).
+
+### TD-15 – Gia cố cấu hình bảo mật của gói Docker
+- **Thay đổi:** image `api` thêm `zz-smartcrm.ini` (`display_errors=Off`, `log_errors=On`, `expose_php=Off`); nginx `server_tokens off` và định dạng access log dùng `$uri` (không ghi query string).
+- **Vì sao:** checklist bảo mật mục 5 (thông báo lỗi không lộ cấu trúc, không lộ phiên bản PHP) và mục 6 (log không ghi từ khoá tìm kiếm có thể là tên hoặc SĐT khách hàng).
+- **Ảnh hưởng:** `Dockerfile`, `frontend/nginx.conf`; `docs/checklist-bao-mat.md`. Không đổi hành vi API.
+
+### TD-16 – Tài liệu bàn giao BT3
+- **Thay đổi:** thêm `docs/deployment-guide.md`, `docs/api-docs.md` (tiếng Anh, 17 endpoint có ví dụ chạy thật), `docs/checklist-bao-mat.md`; `docs/api-contract.md` của BT1 được giữ để truy vết, **`docs/api-docs.md` là tài liệu API hiện hành**. README chuyển sang BT3 (mục 0 – hai lệnh Docker).
+- **Vì sao:** BT3 thành phần 5 và 6; tài liệu phải mô tả đúng hệ thống thật (C9).
+- **Ảnh hưởng:** chỉ tài liệu.

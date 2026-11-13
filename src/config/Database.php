@@ -1,26 +1,14 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/Env.php';
+
 final class Database
 {
     public static function connect(): PDO
     {
-        // Đọc cấu hình từ file .env
-        $envPath = dirname(__DIR__, 2) . '/.env';
-
-        if (!file_exists($envPath)) {
-            throw new RuntimeException('Khong tim thay file .env');
-        }
-
-        $env = parse_ini_file(
-            $envPath,
-            false,
-            INI_SCANNER_RAW
-        );
-
-        if ($env === false) {
-            throw new RuntimeException('Khong doc duoc file .env');
-        }
+        // Đọc cấu hình từ file .env, hoặc từ biến môi trường khi không có file (BUG-06)
+        $env = Env::load();
 
         $host = $env['DB_HOST'] ?? '127.0.0.1';
         $port = $env['DB_PORT'] ?? '3306';

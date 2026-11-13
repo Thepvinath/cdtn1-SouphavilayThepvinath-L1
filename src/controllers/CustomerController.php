@@ -71,7 +71,11 @@ $validated = CustomerValidator::validateCreate((array) $input);
     // Tạm thời che cho mọi vai trò vì chưa có RBAC
     private static function maskCustomer(array $customer): array
     {
-        $phone = (string) ($customer['phone'] ?? '');
+        // BUG-08: che dựa trên số đã chuẩn hoá (QT-02), không dựa trên chuỗi người dùng nhập,
+        // để "+84 901 234 567" hiển thị "09******67" như mọi hồ sơ khác.
+        $phone = (string) (($customer['phone_normalized'] ?? '') !== ''
+            ? $customer['phone_normalized']
+            : ($customer['phone'] ?? ''));
         $digits = preg_replace('/\D/', '', $phone) ?? '';
 
         if (strlen($digits) > 4) {

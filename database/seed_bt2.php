@@ -5,6 +5,11 @@ declare(strict_types=1);
  * Local BT2 demo seeder: dedicated smartcrm_bt2_* databases only.
  * Does not alter the original smartcrm database or store a public password.
  * Usage: php database/seed_bt2.php smartcrm_bt2_clean_clone
+ *
+ * Demo passwords (TD-12): if DEMO_SALES_PASSWORD / DEMO_MANAGER_PASSWORD are set in
+ * .env (or in the environment, e.g. Docker), they are used when the demo accounts are
+ * first created, so a grader can log in without asking. Otherwise a random password is
+ * generated and printed once. Existing accounts are never changed.
  */
 
 $targetDb = $argv[1] ?? '';
@@ -14,14 +19,9 @@ if (!preg_match('/^smartcrm_bt2_[a-z0-9_]+$/D', $targetDb)) {
 }
 
 try {
-    $envPath = dirname(__DIR__) . '/.env';
-    if (!is_file($envPath)) {
-        throw new RuntimeException('Missing .env file. Copy .env.example first.');
-    }
-    $env = parse_ini_file($envPath, false, INI_SCANNER_RAW);
-    if ($env === false) {
-        throw new RuntimeException('Cannot parse .env');
-    }
+    // .env file, or environment variables when there is no .env file (BUG-06)
+    require_once dirname(__DIR__) . '/src/config/Env.php';
+    $env = Env::load(dirname(__DIR__) . '/.env');
     if (($env['DB_NAME'] ?? '') !== $targetDb) {
         throw new RuntimeException('DB_NAME in .env must equal the target test database.');
     }
@@ -30,7 +30,7 @@ try {
     $user = $env['DB_USER'] ?? '';
     $pass = $env['DB_PASSWORD'] ?? '';
     if ($user === '') {
-        throw new RuntimeException('DB_USER is missing from .env');
+        throw new RuntimeException('DB_USER is missing from the configuration');
     }
 
     $pdo = new PDO(
@@ -59,6 +59,19 @@ try {
         throw new RuntimeException('Migration 001_initial is not recorded');
     }
 
+    $demoPassword = static function (string $key) use ($env): ?string {
+        $value = trim((string) ($env[$key] ?? ''));
+        if ($value === '') {
+            return null;
+        }
+        if (strlen($value) < 8) {
+            throw new RuntimeException("{$key} must have at least 8 characters");
+        }
+        return $value;
+    };
+    $configuredSales = $demoPassword('DEMO_SALES_PASSWORD');
+    $configuredManager = $demoPassword('DEMO_MANAGER_PASSWORD');
+
     $pdo->beginTransaction();
     $pdo->exec("INSERT IGNORE INTO roles(role_name) VALUES ('SALES_STAFF'), ('STORE_MANAGER'), ('MARKETING')");
 
@@ -84,7 +97,7 @@ SQL
     $userExists = $findUser->fetchColumn();
     $newPassword = null;
     if (!$userExists) {
-        $newPassword = bin2hex(random_bytes(9));
+        $newPassword = $configuredSales ?? bin2hex(random_bytes(9));
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         if ($hash === false) {
             throw new RuntimeException('Failed to hash local demo password');
@@ -104,7 +117,7 @@ SQL
     $findUser->execute([$managerEmail]);
     $managerPassword = null;
     if (!$findUser->fetchColumn()) {
-        $managerPassword = bin2hex(random_bytes(16));
+        $managerPassword = $configuredManager ?? bin2hex(random_bytes(16));
         $managerHash = password_hash($managerPassword, PASSWORD_DEFAULT);
         $managerInsert = $pdo->prepare("INSERT INTO users(role_id, full_name, email, password_hash, is_active) SELECT role_id, 'Local Demo Manager', ?, ?, 1 FROM roles WHERE role_name='STORE_MANAGER'");
         $managerInsert->execute([$managerEmail, $managerHash]);
@@ -115,7 +128,9 @@ SQL
     $pdo->commit();
 
     echo "Demo manager: {$managerEmail}\n";
-    if ($managerPassword !== null) {
+    if ($managerPassword !== null && $configuredManager !== null) {
+        echo "Manager password: value of DEMO_MANAGER_PASSWORD in the configuration\n";
+    } elseif ($managerPassword !== null) {
         echo "LOCAL MANAGER PASSWORD (shown only once): {$managerPassword}\n";
     } else {
         echo "SKIP: manager exists; password, role and active status unchanged.\n";
@@ -123,7 +138,9 @@ SQL
 
     echo "SEED SUCCESS: {$targetDb}\n";
     echo "Demo user: {$email}\n";
-    if ($newPassword !== null) {
+    if ($newPassword !== null && $configuredSales !== null) {
+        echo "Demo user password: value of DEMO_SALES_PASSWORD in the configuration\n";
+    } elseif ($newPassword !== null) {
         echo "LOCAL DEMO PASSWORD (shown only once): {$newPassword}\n";
         echo "Save it outside the repository. Do not commit a screenshot containing it.\n";
     } else {
