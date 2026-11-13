@@ -26,6 +26,8 @@ curl -s http://localhost:8080/api/health           # {"status":"ok","database":"
 docker compose exec api php tests/run_all.php      # ALL TEST SUITES PASSED
 ```
 
+**Bản triển khai thử (tự chọn):** https://web-production-b5267204.up.railway.app – các bước ở Deployment Guide mục 6; mật khẩu demo của bản này ghi trong PDF BT3.
+
 Hướng dẫn đầy đủ bằng tiếng Anh (yêu cầu, biến môi trường, dữ liệu mẫu, cách kiểm tra, xử lý sự cố): **[`docs/deployment-guide.md`](docs/deployment-guide.md)**. Mục 3 bên dưới là cách dựng **thủ công không dùng Docker** trên Windows + XAMPP (cách chạy của BT2).
 
 ## 1. Giới thiệu và phạm vi
@@ -393,7 +395,7 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 │   └── public/index.php
 ├── frontend/
 │   ├── Dockerfile                 # build Vite -> nginx:1.27-alpine
-│   ├── nginx.conf                 # phục vụ giao diện, proxy /api -> api:8000
+│   ├── nginx.conf.template        # phục vụ giao diện, proxy /api -> ${API_UPSTREAM} (mặc định api:8000)
 │   ├── package.json
 │   ├── package-lock.json          # npm ci sử dụng lock file này
 │   ├── vite.config.js
@@ -437,7 +439,7 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 - [`docs/api-contract.md`](docs/api-contract.md): hợp đồng API.
 - [`docs/thay-doi-thiet-ke.md`](docs/thay-doi-thiet-ke.md): quyết định điều chỉnh thiết kế sau phản hồi BT1.
 - [`docs/ai-disclosure.md`](docs/ai-disclosure.md): khai báo ChatGPT và Codex, phạm vi hỗ trợ và phương pháp kiểm chứng theo từng hạng mục.
-- [`docs/bug-log.md`](docs/bug-log.md): Bug Log BT3 (BUG-02 … BUG-08, mẫu bảy dòng, link commit) và nhật ký lỗi BT2.
+- [`docs/bug-log.md`](docs/bug-log.md): Bug Log BT3 (BUG-02 … BUG-09, mẫu bảy dòng, link commit) và nhật ký lỗi BT2.
 - [`docs/test-plan.md`](docs/test-plan.md) · [`docs/test-report.md`](docs/test-report.md): kế hoạch và kết quả 12 test case chạy thật.
 - [`docs/deployment-guide.md`](docs/deployment-guide.md) · [`docs/api-docs.md`](docs/api-docs.md): hướng dẫn triển khai và tài liệu API (tiếng Anh).
 - [`docs/checklist-bao-mat.md`](docs/checklist-bao-mat.md): checklist bảo mật bảy mục có minh chứng.

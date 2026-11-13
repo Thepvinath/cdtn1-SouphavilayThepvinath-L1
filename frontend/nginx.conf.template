@@ -2,8 +2,11 @@
 # such as customer names or phone numbers (/api/customers?search=...) are not written to logs.
 log_format smartcrm_no_query '$remote_addr [$time_local] "$request_method $uri" $status $body_bytes_sent';
 
+# This file is a TEMPLATE: the official nginx image replaces ${PORT}, ${API_UPSTREAM}
+# and ${NGINX_LOCAL_RESOLVERS} (DNS servers of the container, from /etc/resolv.conf) at start-up.
+# Defaults in frontend/Dockerfile: PORT=80, API_UPSTREAM=api:8000.
 server {
-    listen 80;
+    listen ${PORT};
     server_name _;
     server_tokens off;
     access_log /var/log/nginx/access.log smartcrm_no_query;
@@ -11,9 +14,14 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # PHP API (docker-compose service "api")
+    # PHP API (docker-compose service "api"; another host:port on a hosting platform)
+    # The host name is resolved again every 10 s (resolver + variable) instead of once at
+    # start-up: when the api container is restarted and gets a new address, nginx follows it
+    # without a restart of its own (BUG-09).
     location /api/ {
-        proxy_pass http://api:8000;
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+        set $smartcrm_api ${API_UPSTREAM};
+        proxy_pass http://$smartcrm_api;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;

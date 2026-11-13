@@ -98,6 +98,18 @@ Mỗi bug được phát hiện bởi một test case trong [`docs/test-report.m
 | 6. Cách sửa | `maskCustomer()` dùng `phone_normalized` khi có (sau đó vẫn bị `unset` khỏi phản hồi), chỉ quay về `phone` khi không có. Chỉ sửa `src/controllers/CustomerController.php`. |
 | 7. Commit và xác nhận | [`fce04ce`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/fce04ce9e7e6244b05e2459da1adabcafe2128bf) · Cùng hồ sơ: trước `"phone":"84*******78"`, sau `"phone":"09******78"`; TC-02 (`09******02`) và toàn bộ `tests/run_all.php` vẫn PASS. Trên giao diện chạy bằng Docker: [`BUG-08-fixed.png`](screenshots/BUG-08-fixed.png). |
 
+### BUG-09 · Major – Giao diện treo sau khi dịch vụ `api` khởi động lại (nginx giữ địa chỉ cũ của `api`)
+
+| Dòng | Nội dung |
+|---|---|
+| 1. Mã và mức độ | **BUG-09 · Major.** Sau khi `api` được khởi động lại ở địa chỉ mới, **mọi chức năng không dùng được** (không đăng nhập được) cho tới khi có người khởi động lại `web` bằng tay. Dữ liệu không sai, không lộ; có cách làm tạm nên không phải Critical. |
+| 2. Phát hiện bởi | Bản triển khai thử trên Railway ngày 13/11/2026 (commit `e5445f4`): sau khi xoá volume CSDL và triển khai lại `api` để đổi mật khẩu demo, mở lại trang web. |
+| 3. Triệu chứng | Trang dừng ở "Đang kiểm tra phiên đăng nhập…" ([`BUG-09-before.png`](screenshots/BUG-09-before.png)), nút đăng nhập dừng ở "Đang đăng nhập…"; trong khi `api` **Online** và log `api` bình thường (`SEED SUCCESS`, `Starting PHP server on [::]:8000`, khởi động lúc 21:52, sau `web` 21:46). |
+| 4. Cách tái lập | Trên nền tảng cấp địa chỉ mới cho container mỗi lần triển khai: (1) chạy `web` và `api`; (2) triển khai lại riêng `api`; (3) mở trang web → treo. Bấm Restart cho `web` thì hết. |
+| 5. Nguyên nhân | `frontend/nginx.conf.template` dùng `proxy_pass http://${API_UPSTREAM};` với tên máy cố định: nginx **chỉ phân giải tên `api` một lần lúc khởi động** và giữ địa chỉ đó mãi. Khi `api` có địa chỉ mới, nginx vẫn gửi yêu cầu tới địa chỉ cũ không còn ai nhận. |
+| 6. Cách sửa | Trong `location /api/`: khai báo `resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;` và đưa tên máy vào biến (`set $smartcrm_api …; proxy_pass http://$smartcrm_api;`) để nginx phân giải lại tên sau mỗi 10 giây. `frontend/Dockerfile` đặt `NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1` để image nginx lấy máy chủ DNS của container. Chỉ sửa hai tệp này. |
+| 7. Commit và xác nhận | [`7ef32bf`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/7ef32bf3e2b51235be47dc20b6b5338a93ce3428) · (a) Mô phỏng với nginx thật: đổi bản ghi DNS của `api` sang địa chỉ khác, sau 12 giây nginx tự chuyển sang địa chỉ mới, đường dẫn và query string giữ nguyên. (b) Docker trên Windows: `docker compose up -d --build` → `db`, `api` healthy; `docker compose restart api`, không đụng `web` → `/api/health` trả `{"status":"ok","database":"ok"}`. (c) Railway sau khi triển khai bản sửa: `/api/health` trả `200` ([`deploy-01-health.png`](screenshots/deploy-01-health.png)), đăng nhập được ([`deploy-03-customers-manager.png`](screenshots/deploy-03-customers-manager.png)). |
+
 > Mục 2–6 dưới đây là nhật ký lỗi và vấn đề vận hành của **BT2**, giữ nguyên để truy vết.
 
 ## 2. Danh sách vấn đề
