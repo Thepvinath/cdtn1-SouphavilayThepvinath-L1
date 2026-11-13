@@ -1,0 +1,8 @@
+# Never copy secrets or local state into the image
+.env
+.git
+**/node_modules
+**/dist
+frontend
+docs
+*.log
