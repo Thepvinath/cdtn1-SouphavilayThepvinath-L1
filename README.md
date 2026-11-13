@@ -439,7 +439,7 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 - [`docs/api-contract.md`](docs/api-contract.md): hợp đồng API.
 - [`docs/thay-doi-thiet-ke.md`](docs/thay-doi-thiet-ke.md): quyết định điều chỉnh thiết kế sau phản hồi BT1.
 - [`docs/ai-disclosure.md`](docs/ai-disclosure.md): khai báo ChatGPT và Codex, phạm vi hỗ trợ và phương pháp kiểm chứng theo từng hạng mục.
-- [`docs/bug-log.md`](docs/bug-log.md): Bug Log BT3 (BUG-02 … BUG-08, mẫu bảy dòng, link commit) và nhật ký lỗi BT2.
+- [`docs/bug-log.md`](docs/bug-log.md): Bug Log BT3 (BUG-02 … BUG-09, mẫu bảy dòng, link commit) và nhật ký lỗi BT2.
 - [`docs/test-plan.md`](docs/test-plan.md) · [`docs/test-report.md`](docs/test-report.md): kế hoạch và kết quả 12 test case chạy thật.
 - [`docs/deployment-guide.md`](docs/deployment-guide.md) · [`docs/api-docs.md`](docs/api-docs.md): hướng dẫn triển khai và tài liệu API (tiếng Anh).
 - [`docs/checklist-bao-mat.md`](docs/checklist-bao-mat.md): checklist bảo mật bảy mục có minh chứng.

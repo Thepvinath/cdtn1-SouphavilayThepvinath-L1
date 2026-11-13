@@ -197,7 +197,7 @@ Variables of the `api` service (set in Railway → Variables; secrets are never 
 | `APP_ENV` | `production` | |
 | `DEMO_SALES_PASSWORD`, `DEMO_MANAGER_PASSWORD` | new values (≥ 12 characters) | Not the sample values of `.env.example`, because this copy is public |
 
-Two small changes made the same images usable on a platform without `docker compose` (TD-17 in `docs/thay-doi-thiet-ke.md`): the `web` image reads `PORT` and `API_UPSTREAM` (defaults `80` and `api:8000`), and the `api` start-up script waits for the database (max. 60 s) and reads `API_BIND`.
+Two small changes made the same images usable on a platform without `docker compose` (TD-17 in `docs/thay-doi-thiet-ke.md`): the `web` image reads `PORT` and `API_UPSTREAM` (defaults `80` and `api:8000`), and the `api` start-up script waits for the database (max. 60 s) and reads `API_BIND`. nginx resolves the API host name again every 10 s, so `web` keeps working after `api` is redeployed at a new address (BUG-09 in `docs/bug-log.md`).
 
 ### Verify the trial copy
 
@@ -208,10 +208,12 @@ Two small changes made the same images usable on a platform without `docker comp
 | 3 | Open the address, log in as `demo.sales@smartcrm.local` (password: see the BT3 PDF) | "Danh sách khách hàng" lists KH1–KH3 with masked phones |
 | 4 | Log in as `demo.manager@smartcrm.local` | The menu "Nhân viên" is available |
 
+Screenshots of this check (13 Nov 2026): [`deploy-01-health.png`](screenshots/deploy-01-health.png), [`deploy-02-login-page.png`](screenshots/deploy-02-login-page.png), [`deploy-03-customers-manager.png`](screenshots/deploy-03-customers-manager.png), [`deploy-04-api-log.png`](screenshots/deploy-04-api-log.png), [`deploy-05-web-log.png`](screenshots/deploy-05-web-log.png).
+
 ### Known limits of the trial copy
 
 - The address stops working when the trial credit or the 30 days run out (about 13 Dec 2026).
-- Chrome may show a "Dangerous / deceptive site" label after a password is typed: Google Safe Browsing distrusts login forms on new shared sub-domains (`*.up.railway.app`). The site is not listed in the Safe Browsing site status ("No available data", checked 13 Nov 2026). Use only the demo accounts; never type a real password.
+- Use only the demo accounts and never type a real password. During the first test Chrome showed a "Dangerous – deceptive site" label after login with the first demo passwords; after the demo passwords were replaced by random values (database volume wiped, `api` redeployed) the label no longer appeared. The address is not listed by Google Safe Browsing ("No available data", checked 13 Nov 2026).
 - Security checklist item 3 (store-based access, QT-14) is not implemented, so every logged-in demo user sees all demo customers.
 - The session cookie has `HttpOnly` and `SameSite=Strict` but not `Secure`; a real deployment should set `session.cookie_secure=1` behind HTTPS.
 - Sessions are stored in the container file system and are lost on every redeploy (users must log in again).
