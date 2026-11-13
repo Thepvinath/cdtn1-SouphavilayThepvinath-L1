@@ -20,29 +20,18 @@ if (!preg_match('/^smartcrm_bt2_[a-z0-9_]+$/D', $targetDb)) {
 }
 
 // 2. File paths
+require_once dirname(__DIR__) . '/src/config/Env.php';
 $envPath = dirname(__DIR__) . '/.env';
 $migrationPath = __DIR__ . '/migrations/001_initial.sql';
 
 try {
     // 3. Validate required files
-    if (!is_file($envPath)) {
-        throw new RuntimeException('Missing .env file');
-    }
-
     if (!is_file($migrationPath)) {
         throw new RuntimeException('Missing migration file');
     }
 
-    // 4. Read environment configuration
-    $env = parse_ini_file(
-        $envPath,
-        false,
-        INI_SCANNER_RAW
-    );
-
-    if ($env === false) {
-        throw new RuntimeException('Cannot read .env');
-    }
+    // 4. Read configuration: .env file, or environment variables (BUG-06)
+    $env = Env::load($envPath);
 
     $host = $env['DB_HOST'] ?? '127.0.0.1';
     $port = $env['DB_PORT'] ?? '3306';

@@ -36,8 +36,8 @@ function api(CurlHandle $client, string $base, string $method, string $path, ?ar
 
 try {
     if (!extension_loaded('curl') || !extension_loaded('pdo_mysql')) throw new RuntimeException('Requires curl and pdo_mysql');
-    $env = parse_ini_file($root . '/.env', false, INI_SCANNER_RAW);
-    if (!$env) throw new RuntimeException('Missing or invalid .env');
+    require_once $root . '/src/config/Env.php';
+    $env = Env::load($root . '/.env'); // .env file or DB_* environment variables (BUG-06)
     $host = $env['DB_HOST'] ?? '127.0.0.1';
     $port = $env['DB_PORT'] ?? '3306';
     $pdo = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", $env['DB_USER'], $env['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
@@ -61,9 +61,10 @@ try {
         if ($file->isDir()) { if (!is_dir($dest)) mkdir($dest, 0700, true); }
         else copy($file->getPathname(), $dest);
     }
-    $config = file_get_contents($root . '/.env');
-    $config = preg_replace('/^DB_NAME=.*$/m', 'DB_NAME=' . $target, $config);
-    file_put_contents($runtime . '/.env', $config);
+    file_put_contents($runtime . '/.env', Env::toDotenv(array_intersect_key(
+        ['DB_NAME' => $target] + $env,
+        array_flip(['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'])
+    )));
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
     if (!$socket) throw new RuntimeException('Cannot reserve test port');
     $address = stream_socket_get_name($socket, false);

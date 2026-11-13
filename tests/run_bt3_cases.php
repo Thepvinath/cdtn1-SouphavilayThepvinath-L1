@@ -177,10 +177,8 @@ function setUpApiEnv(string $root): ApiEnv
     if (!extension_loaded('curl') || !extension_loaded('pdo_mysql')) {
         throw new RuntimeException('Can PHP extension curl va pdo_mysql');
     }
-    $env = parse_ini_file($root . '/.env', false, INI_SCANNER_RAW);
-    if (!$env) {
-        throw new RuntimeException('Thieu hoac sai tep .env (README buoc 3.3)');
-    }
+    require_once $root . '/src/config/Env.php';
+    $env = Env::load($root . '/.env'); // tep .env hoac bien moi truong DB_* (BUG-06)
 
     $e = new ApiEnv();
     $e->target = 'smartcrm_bt2_tc_' . bin2hex(random_bytes(6));
@@ -202,9 +200,10 @@ function setUpApiEnv(string $root): ApiEnv
     mkdir($e->runtime . '/SmartCRM/sessions', 0700, true);
     copyTree($root . '/src', $e->runtime . '/src');
     copyTree($root . '/database', $e->runtime . '/database');
-    $config = file_get_contents($root . '/.env');
-    $config = preg_replace('/^DB_NAME=.*$/m', 'DB_NAME=' . $e->target, $config);
-    file_put_contents($e->runtime . '/.env', $config);
+    file_put_contents($e->runtime . '/.env', Env::toDotenv(array_intersect_key(
+        ['DB_NAME' => $e->target] + $env,
+        array_flip(['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'])
+    )));
 
     // Dung CSDL bang migration va seeder THAT cua repo (lan chay thu nhat).
     [$status, $out] = $e->runScript('database/migrate.php', $e->target);

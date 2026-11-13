@@ -14,14 +14,9 @@ if (!preg_match('/^smartcrm_bt2_[a-z0-9_]+$/D', $targetDb)) {
 }
 
 try {
-    $envPath = dirname(__DIR__) . '/.env';
-    if (!is_file($envPath)) {
-        throw new RuntimeException('Missing .env file. Copy .env.example first.');
-    }
-    $env = parse_ini_file($envPath, false, INI_SCANNER_RAW);
-    if ($env === false) {
-        throw new RuntimeException('Cannot parse .env');
-    }
+    // .env file, or environment variables when there is no .env file (BUG-06)
+    require_once dirname(__DIR__) . '/src/config/Env.php';
+    $env = Env::load(dirname(__DIR__) . '/.env');
     if (($env['DB_NAME'] ?? '') !== $targetDb) {
         throw new RuntimeException('DB_NAME in .env must equal the target test database.');
     }
@@ -30,7 +25,7 @@ try {
     $user = $env['DB_USER'] ?? '';
     $pass = $env['DB_PASSWORD'] ?? '';
     if ($user === '') {
-        throw new RuntimeException('DB_USER is missing from .env');
+        throw new RuntimeException('DB_USER is missing from the configuration');
     }
 
     $pdo = new PDO(
