@@ -65,3 +65,26 @@ Cột "Các bước" mô tả những gì script thực hiện khi chạy lệnh
 | Toàn bộ | – | `tests/run_all.php`: Unit tests PASS · HTTP integration tests PASS · BT3 test cases **12 passed, 0 failed** · `ALL TEST SUITES PASSED` | **PASS** | [run-all-after-fix.png](screenshots/run-all-after-fix.png) |
 
 **Kết luận theo tiêu chí thành công của Test Plan (mục 3):** 12/12 test case đã chạy thật và có ảnh · mỗi quy tắc đã hiện thực có ≥ 1 test · 0 bug Critical đang mở · `tests/run_all.php` kết thúc bằng `ALL TEST SUITES PASSED` → **ĐẠT**.
+
+## 6. Lần chạy 3 – trong gói Docker, phép thử máy trắng (BT3, buổi 15–16)
+
+| Mục | Giá trị |
+|---|---|
+| Ngày chạy | 13/11/2026 · máy Windows 11 của sinh viên, Docker 29.9.1 (Docker Desktop) |
+| Cách dựng | Clone nhánh `dev` vào thư mục **mới** `smartcrm-docker-check` → `cp .env.example .env` → `docker compose down -v` → `docker compose up -d --build` (đúng Deployment Guide) |
+| Commit được kiểm thử | `cb79fed` (sau các commit BUG-05 … BUG-08 và đóng gói Docker TD-12 … TD-15) |
+| Lệnh | `docker compose exec api php tests/run_all.php`; một test case: `docker compose exec api php tests/run_bt3_cases.php TC-05` |
+
+| Kiểm tra | Kết quả thực tế | Ảnh |
+|---|---|---|
+| Lần dựng đầu tiên trên máy Windows (commit `dd07689`) | **FAIL** – `db` exited (1): `MYSQL_USER="root"…` → ghi **BUG-07**, sửa ở `f74a1dc` | [BUG-07-before-up.png](screenshots/BUG-07-before-up.png), [BUG-07-before-logs.png](screenshots/BUG-07-before-logs.png) |
+| `docker compose up -d --build` sau khi sửa | `db` Healthy, `api` Healthy, `web` Started | [docker-05-rebuild-up.png](screenshots/docker-05-rebuild-up.png) |
+| `docker compose ps` + `curl.exe -s -i http://localhost:8080/api/health` | 3 dịch vụ `(healthy)`, chỉ `web` mở cổng 8080; `HTTP/1.1 200 OK`, `Server: nginx`, không có `X-Powered-By`; `{"status":"ok","database":"ok"}` | [docker-06-ps-headers.png](screenshots/docker-06-ps-headers.png) |
+| Toàn bộ bộ test trong container | Unit tests PASS · HTTP integration tests PASS · BT3 test cases **12 passed, 0 failed, 12 total** · `ALL TEST SUITES PASSED` | [docker-07-tests-and-tc05.png](screenshots/docker-07-tests-and-tc05.png) |
+| Chạy riêng **TC-05** (chọn ngẫu nhiên tại chỗ) | `InvalidArgumentException "So dien thoai phai co tu 8 den 15 chu so"` · `Ket qua : PASS` · `1 passed, 0 failed` | [docker-07-tests-and-tc05.png](screenshots/docker-07-tests-and-tc05.png) |
+| Tái lập: `docker compose restart api` | Log: `SKIP: manager exists…`, `SKIP: demo user already exists…`; đếm bảng: roles **3**, users **2**, customers **3** (không nhân đôi; bộ test dùng CSDL tạm riêng nên dữ liệu demo không đổi) | [docker-08-restart-counts.png](screenshots/docker-08-restart-counts.png) |
+| Giao diện `http://localhost:8080` (đăng nhập `demo.sales`) | Danh sách KH1–KH3 hiển thị, SĐT được che | [docker-04-web-login.png](screenshots/docker-04-web-login.png) |
+| Tạo khách hàng với SĐT `+84 912 345 678` (xác nhận BUG-08) | "Đã tạo hồ sơ khách hàng Hello test thành công!", SĐT hiển thị **`09******78`**; tìm `0912` → đúng 1 kết quả | [BUG-08-create-form.png](screenshots/BUG-08-create-form.png), [BUG-08-fixed.png](screenshots/BUG-08-fixed.png), [docker-09-search-0912.png](screenshots/docker-09-search-0912.png) |
+| Log nginx sau khi tìm `0912` (checklist bảo mật mục 6) | `"GET /api/customers" 200 290` – **không có** `?search=0912` | [docker-10-web-log.png](screenshots/docker-10-web-log.png) |
+
+**Kết luận lần chạy 3:** gói Docker dựng lại được từ thư mục trống bằng hai lệnh (`cp .env.example .env`, `docker compose up -d --build`); mọi dịch vụ healthy; 12/12 test case và toàn bộ bộ test PASS bằng một lệnh trong container; chạy lại không nhân đôi dữ liệu. Lỗi duy nhất của phép thử máy trắng (BUG-07) đã được ghi Bug Log và sửa.

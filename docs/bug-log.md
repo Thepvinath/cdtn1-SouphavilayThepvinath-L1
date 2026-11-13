@@ -3,14 +3,14 @@
 **Dự án:** Smart CRM – Mekong Mobile  
 **Học phần:** Chuyên đề tốt nghiệp 1 – Track Software Engineering (SE)  
 **Phạm vi:** Customer CRUD, User CRUD, tìm kiếm, phát hiện và gộp hồ sơ khách hàng trùng  
-**Môi trường đã thử:** Windows, PowerShell, XAMPP/PHP, MySQL 8, React/Vite  
+**Môi trường đã thử:** Windows, PowerShell, XAMPP/PHP, MySQL 8, React/Vite; Docker Desktop (BT3: `db` mysql:8.0, `api` php:8.3, `web` nginx)  
 **Cơ sở dữ liệu kiểm thử:** `smartcrm_bt2_clean_clone` (không phải `smartcrm` gốc)
 
 ## 1. Mục đích và nguyên tắc ghi nhận
 
 Tài liệu này ghi lại **lỗi hoặc trở ngại đã thực sự xuất hiện** trong quá trình phát triển, dựng lại môi trường và thử nghiệm BT2. Phân biệt rõ **lỗi mã nguồn** với **vấn đề cấu hình/vận hành/Git**; không xem các tình huống kiểm thử đúng kỳ vọng (ví dụ danh sách hồ sơ trùng rỗng sau khi gộp thành công) là lỗi. Không đưa mật khẩu, CSRF token hoặc thông tin nhạy cảm vào tài liệu và ảnh công khai.
 
-## BT3 – Bug đã sửa (mẫu bảy dòng, buổi 13–14)
+## BT3 – Bug đã sửa (mẫu bảy dòng, buổi 13–16)
 
 Mỗi bug được phát hiện bởi một test case trong [`docs/test-report.md`](test-report.md), gỡ theo bốn bước (tái lập · khoanh vùng · sửa · xác nhận) và sửa bằng **một commit riêng**. Mức độ phân loại theo ba câu hỏi: người dùng có làm được việc không · dữ liệu có bị sai hoặc bị lộ không · có cách làm tạm không.
 
@@ -49,6 +49,54 @@ Mỗi bug được phát hiện bởi một test case trong [`docs/test-report.m
 | 5. Nguyên nhân | Khi backend tắt, proxy của Vite trả HTTP 5xx với **thân phản hồi rỗng**. Hàm `request()` trong `frontend/src/api/client.js` gọi `response.json()` **trước khi kiểm tra `response.ok`**, nên `json()` ném `SyntaxError` và thông báo thô này đi thẳng lên giao diện thay cho thông báo của ứng dụng. `frontend/src/api/merge.api.js` tự gọi `fetch` + `json()` riêng (không qua lớp client), nên có cùng lỗi. |
 | 6. Cách sửa | Trong `client.js`: thêm `parseResponse()` đọc thân phản hồi bằng `text()`, chỉ `JSON.parse` khi có nội dung; phản hồi lỗi không có JSON → thông báo "Không thể kết nối đến hệ thống. Vui lòng kiểm tra kết nối và thử lại." (5xx) hoặc "Yêu cầu thất bại (HTTP …)"; thêm `send()` đổi lỗi mạng của `fetch` thành cùng thông báo. Phản hồi lỗi có JSON vẫn hiển thị `message` của backend như cũ. `merge.api.js` chuyển sang dùng `getCsrfToken()`, `send()`, `parseResponse()` của lớp client, giữ nguyên giá trị trả về nên `DuplicatesPage.jsx` không phải sửa. |
 | 7. Commit và xác nhận | [`260d285`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/260d28516563b62d4fa48bcf1b7605ee099aa627) · Tái lập lại đúng các bước ở dòng 4: trang hiện "Không thể kết nối đến hệ thống. Vui lòng kiểm tra kết nối và thử lại." kèm nút "Thử lại" ([`BUG-04-fixed.png`](screenshots/BUG-04-fixed.png)). Bản sửa chỉ thay đổi frontend; backend và `tests/run_all.php` không bị ảnh hưởng. |
+
+### BUG-05 · Major – API trả HTTP 500 trên Linux/container vì phụ thuộc biến `LOCALAPPDATA` của Windows
+
+| Dòng | Nội dung |
+|---|---|
+| 1. Mã và mức độ | **BUG-05 · Major.** Người khác **không dựng được hệ thống** ngoài Windows (Linux, macOS, container Docker) – vi phạm nguyên tắc TÁI LẬP ĐƯỢC và chặn thành phần 4 của BT3. Dữ liệu không sai, không lộ; có cách làm tạm (đặt `LOCALAPPDATA` thủ công) nên không phải Critical. |
+| 2. Phát hiện bởi | Phép thử máy trắng: clone tag `v0.2` vào thư mục trống trên Linux (03/11/2026), tái lập lại trong điều kiện giống container ngày 13/11/2026, commit `e9f2ce2`. |
+| 3. Triệu chứng | Mọi request (kể cả `GET /api/auth/csrf`) trả `HTTP/1.0 500 Internal Server Error`; log PHP: `PHP Fatal error: Uncaught RuntimeException: LOCALAPPDATA environment variable is missing in src/public/index.php:11`. |
+| 4. Cách tái lập | Trên Linux/macOS (không có `LOCALAPPDATA`): `php -S 127.0.0.1:8090 -t src/public src/public/index.php` → `curl -i http://127.0.0.1:8090/api/auth/csrf`. |
+| 5. Nguyên nhân | Phần cấu hình session ở đầu `src/public/index.php` **bắt buộc** biến `LOCALAPPDATA` (chỉ Windows có) và ghép đường dẫn bằng dấu `\` của Windows (`$localAppData . '\\SmartCRM\\sessions'`); đoạn này chạy **trước** khối `try` nên ngoại lệ không được bắt, PHP trả 500 cho mọi route. |
+| 6. Cách sửa | Thư mục session lấy theo thứ tự: `SESSION_SAVE_PATH` (Docker đặt biến này) → `%LOCALAPPDATA%\SmartCRM\sessions` (giữ nguyên cách chạy Windows của README) → `<thư mục tạm>/smartcrm-sessions`; dùng `DIRECTORY_SEPARATOR` và tự tạo thư mục nếu chưa có. Chỉ sửa `src/public/index.php`. |
+| 7. Commit và xác nhận | [`4f7513c`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/4f7513c7acd66e55e6456a08c9f2c69fee6e978a) · Chạy lại bước 4 không có `LOCALAPPDATA`: `{"data":{"csrf_token":"<token>"}} [HTTP 200]`, session được tạo trong `/tmp/smartcrm-sessions`. Chế độ Windows (`LOCALAPPDATA`) vẫn dùng `…\SmartCRM\sessions`. Trong container: `api` **healthy** ([`docker-02-ps-health.png`](screenshots/docker-02-ps-health.png)). |
+
+### BUG-06 · Major – Không cấu hình được CSDL bằng biến môi trường (chỉ đọc tệp `.env`)
+
+| Dòng | Nội dung |
+|---|---|
+| 1. Mã và mức độ | **BUG-06 · Major.** Container Docker nhận cấu hình qua biến môi trường và không có tệp `.env` trong image (`.env` bị `.dockerignore` chặn để không lộ secret) → API, migration và seeder **không chạy được** trong container. Không sai/lộ dữ liệu. |
+| 2. Phát hiện bởi | Tái lập điều kiện container ngày 13/11/2026 (không có tệp `.env`, biến `DB_*` đặt trong môi trường), commit `e9f2ce2`, khi chuẩn bị đóng gói Docker. |
+| 3. Triệu chứng | `php tests/test_db.php` → `Connection failed: Khong tim thay file .env`; `php database/migrate.php smartcrm_bt2_docker` → `MIGRATION ERROR: Missing .env file` – dù `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` đã được đặt. |
+| 4. Cách tái lập | Ở thư mục không có `.env`: `DB_HOST=127.0.0.1 DB_NAME=smartcrm_bt2_docker DB_USER=… DB_PASSWORD=… php tests/test_db.php`. |
+| 5. Nguyên nhân | Năm nơi đọc cấu hình (`src/config/Database.php`, `database/migrate.php`, `database/seed_bt2.php`, `tests/run_user_integration.php`, `tests/run_bt3_cases.php`) đều **chỉ gọi `parse_ini_file('.env')`** và ném lỗi khi không có tệp; không nơi nào đọc biến môi trường. |
+| 6. Cách sửa | Thêm `src/config/Env.php` (`Env::load()`): có tệp `.env` → dùng tệp (cách chạy Windows/XAMPP và bản sao tạm của bộ kiểm thử không đổi); không có → đọc các biến `DB_*`, `DEMO_*`, `SESSION_SAVE_PATH` từ môi trường. Năm nơi trên dùng chung `Env::load()`; bộ kiểm thử ghi `.env` cho bản sao tạm bằng `Env::toDotenv()`. |
+| 7. Commit và xác nhận | [`7cf7b2c`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/7cf7b2cd84561e62f4117292e5c370804dc0755d) · Không có `.env`: `MySQL connection: SUCCESS`, migration `Tables created: 5`, `SEED SUCCESS`; toàn bộ `tests/run_all.php` PASS ở **cả hai** chế độ (có `.env` và chỉ biến môi trường). Trong container: `ALL TEST SUITES PASSED` ([`docker-03-tests-in-container.png`](screenshots/docker-03-tests-in-container.png)). |
+
+### BUG-07 · Major – Container `db` dừng ngay (exit 1) khi máy đã có biến `DB_USER=root`
+
+| Dòng | Nội dung |
+|---|---|
+| 1. Mã và mức độ | **BUG-07 · Major.** Gói Docker **không khởi động được** trên máy có sẵn biến môi trường `DB_USER`/`DB_PASSWORD` (thường gặp ở máy đã cài XAMPP/MySQL) → mục cốt lõi C1 thất bại trên những máy đó. Có cách làm tạm (xoá biến khỏi phiên PowerShell) nên không phải Critical. |
+| 2. Phát hiện bởi | **Phép thử máy trắng trên Windows** ngày 13/11/2026: clone nhánh `dev` (commit `dd07689`) vào thư mục mới `smartcrm-docker-check`, `cp .env.example .env`, `docker compose up -d --build`; ảnh [`BUG-07-before-up.png`](screenshots/BUG-07-before-up.png). |
+| 3. Triệu chứng | `Container smartcrm-db-1 Error dependency db failed to start` · `container smartcrm-db-1 exited (1)`; `docker compose logs db`: `[ERROR] [Entrypoint]: MYSQL_USER="root", MYSQL_USER and MYSQL_PASSWORD are for configuring a regular user and cannot be used for the root user` ([`BUG-07-before-logs.png`](screenshots/BUG-07-before-logs.png)) – trong khi `.env` ghi `DB_USER=smartcrm`. |
+| 4. Cách tái lập | Trong shell đặt `DB_USER=root` rồi `docker compose up -d`; hoặc không cần chạy container: `DB_USER=root docker compose config` → hiện `MYSQL_USER: root`. |
+| 5. Nguyên nhân | `docker-compose.yml` truyền cấu hình bằng **nội suy `${DB_USER}`**, mà Docker Compose **ưu tiên biến môi trường của shell hơn tệp `.env`** khi nội suy. Máy Windows của sinh viên có sẵn biến `DB_USER` (= `root`) và `DB_PASSWORD` ([`BUG-07-host-env.png`](screenshots/BUG-07-host-env.png), chỉ hiện tên biến) nên giá trị trong `.env` bị ghi đè. |
+| 6. Cách sửa | `db` và `api` đọc cấu hình bằng **`env_file: .env`** (giá trị lấy thẳng từ tệp, biến của máy chủ không ghi đè được); `db` ánh xạ `DB_*` → `MYSQL_*` ngay trong container trước khi chạy `docker-entrypoint.sh`; healthcheck dùng `DB_ROOT_PASSWORD`. Thêm `.env.example text eol=lf` vào `.gitattributes`. |
+| 7. Commit và xác nhận | [`f74a1dc`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/f74a1dc9fda3be3b1e2dfb2807bad57e7e360fd0) · Cùng máy, vẫn còn biến `DB_USER=root`: `db`, `api`, `web` đều **healthy**, `/api/health` → `{"status":"ok","database":"ok"}` ([`docker-02-ps-health.png`](screenshots/docker-02-ps-health.png)), test trong container `ALL TEST SUITES PASSED`. `DB_USER=root docker compose config` nay cho `DB_USER: smartcrm`. |
+
+### BUG-08 · Minor – Số điện thoại nhập dạng `+84…` hiển thị sai mẫu che (`84*******78`)
+
+| Dòng | Nội dung |
+|---|---|
+| 1. Mã và mức độ | **BUG-08 · Minor.** Chỉ ảnh hưởng **trình bày**: dữ liệu lưu đúng (`phone_normalized = 0912345678`, chống trùng vẫn đúng), số vẫn bị che, không lộ thêm chữ số; nhưng hồ sơ hiển thị khác mẫu `09******78` của các hồ sơ còn lại. |
+| 2. Phát hiện bởi | Khi chạy thật mọi endpoint để lấy ví dụ cho `docs/api-docs.md` ngày 13/11/2026, commit `f74a1dc`: `POST /api/customers` với `"phone":"+84 901 234 567"`. |
+| 3. Triệu chứng | Phản hồi trả `"phone":"84*******67"` thay vì `"09******67"`; tương tự `+84 912 345 678` → `84*******78`. |
+| 4. Cách tái lập | Đăng nhập `SALES_STAFF` → `POST /api/customers {"full_name":"Le Thi Cam","phone":"+84 912 345 678"}` → `GET /api/customers?search=Cam`. |
+| 5. Nguyên nhân | `CustomerController::maskCustomer()` che các chữ số của cột **`phone` (chuỗi người dùng nhập)** thay vì `phone_normalized`; BUG-03 chỉ sửa giá trị chuẩn hoá dùng để chống trùng, còn hàm che vẫn đọc chuỗi gốc có tiền tố `84`. |
+| 6. Cách sửa | `maskCustomer()` dùng `phone_normalized` khi có (sau đó vẫn bị `unset` khỏi phản hồi), chỉ quay về `phone` khi không có. Chỉ sửa `src/controllers/CustomerController.php`. |
+| 7. Commit và xác nhận | [`fce04ce`](https://github.com/Thepvinath/cdtn1-SouphavilayThepvinath-L1/commit/fce04ce9e7e6244b05e2459da1adabcafe2128bf) · Cùng hồ sơ: trước `"phone":"84*******78"`, sau `"phone":"09******78"`; TC-02 (`09******02`) và toàn bộ `tests/run_all.php` vẫn PASS. Trên giao diện chạy bằng Docker: [`BUG-08-fixed.png`](screenshots/BUG-08-fixed.png). |
 
 > Mục 2–6 dưới đây là nhật ký lỗi và vấn đề vận hành của **BT2**, giữ nguyên để truy vết.
 
