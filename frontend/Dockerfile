@@ -12,8 +12,10 @@ RUN npm run build
 FROM nginx:1.27-alpine
 # nginx.conf.template -> /etc/nginx/conf.d/default.conf at start-up (envsubst, built into the image).
 # PORT and API_UPSTREAM can be overridden by the hosting platform (TD-17); defaults = docker compose.
+# NGINX_ENTRYPOINT_LOCAL_RESOLVERS makes the image export NGINX_LOCAL_RESOLVERS for the template.
 ENV PORT=80 \
-    API_UPSTREAM=api:8000
+    API_UPSTREAM=api:8000 \
+    NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
