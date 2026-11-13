@@ -13,6 +13,8 @@ The system runs as three Docker containers started by **two commands**:
 
 Start order is enforced with healthchecks: `api` waits until `db` is healthy, `web` waits until `api` is healthy.
 
+A public trial copy (optional bonus) is described in section 6.
+
 ---
 
 ## 1. Requirements
@@ -159,3 +161,57 @@ Run from the project folder after step 4.
 | Login fails with the demo password after changing `.env` | The accounts already existed; the seeder never changes existing passwords | `docker compose down -v`, then step 4 again |
 
 **Without Docker:** the manual Windows/XAMPP setup is still documented in `README.md` section 3.
+
+---
+
+## 6. Trial deployment on Railway (optional, bonus)
+
+A public trial copy of the same three services runs on Railway (free trial: USD 5 of credit, 30 days from 13 Nov 2026):
+
+**https://web-production-b5267204.up.railway.app** · health check: `/api/health` → `{"status":"ok","database":"ok"}`
+
+It is built from this repository (branch `dev`, the same `Dockerfile` and `frontend/Dockerfile`); no file is specific to Railway. The demo logins of the trial copy use **different passwords** from `.env.example`; they are written in the BT3 PDF only and are not stored in this repository. The database contains demo data only.
+
+### Steps that were done
+
+| # | Step (Railway dashboard) | Detail |
+|---:|---|---|
+| 1 | New project → **Docker Image** `mysql:8.0`, service name `db` | Volume mounted at `/var/lib/mysql`. No public domain |
+| 2 | Variables of `db` | `MYSQL_DATABASE=smartcrm_bt2_railway`, `MYSQL_USER=smartcrm`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` (two random values typed only into Railway) |
+| 3 | New service → **GitHub Repo** (this repository), name `api`, branch `dev`, root directory `/` | Railway builds the root `Dockerfile`. No public domain: the API is reachable only on the private network |
+| 4 | Variables of `api` | See the table below |
+| 5 | New service → **GitHub Repo** (same repository), name `web`, branch `dev`, **root directory `frontend`** | Railway builds `frontend/Dockerfile` |
+| 6 | Variables of `web` | `API_UPSTREAM=${{api.RAILWAY_PRIVATE_DOMAIN}}:8000`, `PORT=80` |
+| 7 | `web` → Settings → Networking → **Generate Domain**, target port `80` | Gives the public HTTPS address above; TLS is terminated by Railway |
+
+Variables of the `api` service (set in Railway → Variables; secrets are never written to the repository or baked into an image):
+
+| Variable | Value on Railway | Why |
+|---|---|---|
+| `DB_HOST` | `${{db.RAILWAY_PRIVATE_DOMAIN}}` | Reference to the private host name of the `db` service |
+| `DB_PORT` | `3306` | |
+| `DB_NAME` | `smartcrm_bt2_railway` | Must start with `smartcrm_bt2_` |
+| `DB_USER` | `smartcrm` | Same as `MYSQL_USER` of `db` |
+| `DB_PASSWORD` | `${{db.MYSQL_PASSWORD}}` | Reference – the password is stored once, in the `db` service |
+| `API_BIND` | `[::]` | Listen on IPv6 + IPv4; Railway's private network uses IPv6 (default `0.0.0.0` for docker compose) |
+| `APP_ENV` | `production` | |
+| `DEMO_SALES_PASSWORD`, `DEMO_MANAGER_PASSWORD` | new values (≥ 12 characters) | Not the sample values of `.env.example`, because this copy is public |
+
+Two small changes made the same images usable on a platform without `docker compose` (TD-17 in `docs/thay-doi-thiet-ke.md`): the `web` image reads `PORT` and `API_UPSTREAM` (defaults `80` and `api:8000`), and the `api` start-up script waits for the database (max. 60 s) and reads `API_BIND`.
+
+### Verify the trial copy
+
+| # | Action | Expected result |
+|---:|---|---|
+| 1 | `curl -s -i https://web-production-b5267204.up.railway.app/api/health` | `HTTP/1.1 200 OK`, body `{"status":"ok","database":"ok"}`, no `X-Powered-By` header |
+| 2 | Railway → `api` → Deploy Logs | `SUCCESS: 001_initial applied.`, `SEED SUCCESS: smartcrm_bt2_railway`, `[api] Starting PHP server on [::]:8000` |
+| 3 | Open the address, log in as `demo.sales@smartcrm.local` (password: see the BT3 PDF) | "Danh sách khách hàng" lists KH1–KH3 with masked phones |
+| 4 | Log in as `demo.manager@smartcrm.local` | The menu "Nhân viên" is available |
+
+### Known limits of the trial copy
+
+- The address stops working when the trial credit or the 30 days run out (about 13 Dec 2026).
+- Chrome may show a "Dangerous / deceptive site" label after a password is typed: Google Safe Browsing distrusts login forms on new shared sub-domains (`*.up.railway.app`). The site is not listed in the Safe Browsing site status ("No available data", checked 13 Nov 2026). Use only the demo accounts; never type a real password.
+- Security checklist item 3 (store-based access, QT-14) is not implemented, so every logged-in demo user sees all demo customers.
+- The session cookie has `HttpOnly` and `SameSite=Strict` but not `Secure`; a real deployment should set `session.cookie_secure=1` behind HTTPS.
+- Sessions are stored in the container file system and are lost on every redeploy (users must log in again).

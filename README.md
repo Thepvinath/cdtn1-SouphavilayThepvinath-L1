@@ -26,6 +26,8 @@ curl -s http://localhost:8080/api/health           # {"status":"ok","database":"
 docker compose exec api php tests/run_all.php      # ALL TEST SUITES PASSED
 ```
 
+**Bản triển khai thử (tự chọn):** https://web-production-b5267204.up.railway.app – các bước ở Deployment Guide mục 6; mật khẩu demo của bản này ghi trong PDF BT3.
+
 Hướng dẫn đầy đủ bằng tiếng Anh (yêu cầu, biến môi trường, dữ liệu mẫu, cách kiểm tra, xử lý sự cố): **[`docs/deployment-guide.md`](docs/deployment-guide.md)**. Mục 3 bên dưới là cách dựng **thủ công không dùng Docker** trên Windows + XAMPP (cách chạy của BT2).
 
 ## 1. Giới thiệu và phạm vi
@@ -393,7 +395,7 @@ Các ảnh 01–18 đã có trong nhánh phát triển trước khi chuẩn bị
 │   └── public/index.php
 ├── frontend/
 │   ├── Dockerfile                 # build Vite -> nginx:1.27-alpine
-│   ├── nginx.conf                 # phục vụ giao diện, proxy /api -> api:8000
+│   ├── nginx.conf.template        # phục vụ giao diện, proxy /api -> ${API_UPSTREAM} (mặc định api:8000)
 │   ├── package.json
 │   ├── package-lock.json          # npm ci sử dụng lock file này
 │   ├── vite.config.js
